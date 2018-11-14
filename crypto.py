@@ -54,7 +54,7 @@ def aes_encrypt_block(plain_text, key_schedule):
     """
     assert type(key_schedule) == bytearray, "key_schedule must be of type bytearray"
     assert type(plain_text) == bytearray, "plain_text must be of type bytearray"
-    assert len(key_schedule) == block_size * (n_rounds + 1) "key_schedule must contain n_rounds + 1 sub-keys"
+    assert len(key_schedule) == block_size * (n_rounds + 1), "key_schedule must contain n_rounds + 1 sub-keys"
     assert len(plain_text) == block_size, "plain_text must be 128 bits"
 
     state = [b for b in plain_text] # Copy the message
@@ -82,16 +82,18 @@ def add_round_key(state, key):
 
 def sub_bytes(state):
     # TODO do crypto stuff here
+    pass
 
 def shift_rows(state):
     # TODO do crypto stuff here
+    pass
 
 def mix_columns(state):
     for c in range(0, block_size, n_rows):
         state[c + 0] = mul2[state[c + 0]] ^ mul3[state[c + 1]] ^ state[c + 2] ^ state[c + 3]
-        state[c + 0] = state[c + 0] ^ mul2[state[c + 1]] ^  mul3[state[c + 2]] ^ state[c + 3]
-        state[c + 0] = state[c + 0] ^ state[c + 1] ^ mul2[state[c + 2]] ^  mul3[state[c + 3]]
-        state[c + 0] = mul3[state[c + 0]] ^ state[c + 1] ^ state[c + 2] ^  mul2[state[c + 3]]
+        state[c + 1] = state[c + 0] ^ mul2[state[c + 1]] ^  mul3[state[c + 2]] ^ state[c + 3]
+        state[c + 2] = state[c + 0] ^ state[c + 1] ^ mul2[state[c + 2]] ^  mul3[state[c + 3]]
+        state[c + 3] = mul3[state[c + 0]] ^ state[c + 1] ^ state[c + 2] ^  mul2[state[c + 3]]
 
 def expand_key(key):
     assert type(key) == bytearray, "key must be of type bytearray"
