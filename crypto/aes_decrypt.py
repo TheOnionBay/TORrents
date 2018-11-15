@@ -52,5 +52,10 @@ def inv_shift_rows(state):
     return state
 
 def inv_mix_columns(state):
-    # TODO do crypto stuff here
-    return state
+    res = bytearray(len(state))
+    for c in range(0, len(state), n_rows):
+        res[c + 0] = mul(14, state[c + 0]) ^ mul(11, state[c + 1]) ^ mul(13, state[c + 2]) ^ mul(9,  state[c + 3])
+        res[c + 1] = mul(9,  state[c + 0]) ^ mul(14, state[c + 1]) ^ mul(11, state[c + 2]) ^ mul(13, state[c + 3])
+        res[c + 2] = mul(13, state[c + 0]) ^ mul(9,  state[c + 1]) ^ mul(14, state[c + 2]) ^ mul(11, state[c + 3])
+        res[c + 3] = mul(11, state[c + 0]) ^ mul(13, state[c + 1]) ^ mul(9,  state[c + 2]) ^ mul(14, state[c + 3])
+    return bytes(res)

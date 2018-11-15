@@ -64,8 +64,8 @@ def shift_rows(state):
 def mix_columns(state):
     res = bytearray(len(state))
     for c in range(0, len(state), n_rows):
-        res[c + 0] = mul2[state[c + 0]] ^ mul3[state[c + 1]] ^ state[c + 2]       ^ state[c + 3]
-        res[c + 1] = state[c + 0]       ^ mul2[state[c + 1]] ^ mul3[state[c + 2]] ^ state[c + 3]
-        res[c + 2] = state[c + 0]       ^ state[c + 1]       ^ mul2[state[c + 2]] ^  mul3[state[c + 3]]
-        res[c + 3] = mul3[state[c + 0]] ^ state[c + 1]       ^ state[c + 2]       ^  mul2[state[c + 3]]
+        res[c + 0] = mul(2, state[c + 0]) ^ mul(3, state[c + 1]) ^        state[c + 2]  ^        state[c + 3]
+        res[c + 1] =        state[c + 0]  ^ mul(2, state[c + 1]) ^ mul(3, state[c + 2]) ^        state[c + 3]
+        res[c + 2] =        state[c + 0]  ^        state[c + 1]  ^ mul(2, state[c + 2]) ^ mul(3, state[c + 3])
+        res[c + 3] = mul(3, state[c + 0]) ^        state[c + 1]  ^        state[c + 2]  ^ mul(2, state[c + 3])
     return bytes(res)
