@@ -3,6 +3,8 @@ import crypto
 
 class TestCrypto(unittest.TestCase):
     def test_mix_columns(self):
+        # Those test values are taken from Wikipedia
+        # (https://en.wikipedia.org/wiki/Rijndael_MixColumns)
         inputs = [bytearray([0xdb, 0x13, 0x53, 0x45]),
                 bytearray([0xf2, 0x0a, 0x22, 0x5c]),
                 bytearray([0x01, 0x01, 0x01, 0x01]),
@@ -18,7 +20,8 @@ class TestCrypto(unittest.TestCase):
                 bytearray([0x4d, 0x7e, 0xbd, 0xf8])]
 
         for input, output in zip(inputs, outputs):
-            self.assertEquals(output, crypto.mix_columns(input))
+            crypto.mix_columns(input)
+            self.assertEquals(input, output)
 
 if __name__ == '__main__':
     unittest.main()

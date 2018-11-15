@@ -13,19 +13,24 @@ n_rows = 4
 block_size = n_columns * n_rows # Number of bytes in one message or one key
 
 # These arrays are used as lookup tables for the result of multiplying a byte by
-# 0x02 and 0x03 modulo 0x1b. We need to do these operations in mix_columns.
+# 2 and 3 modulo 0x011b. We need to do these operations in mix_columns.
 
-# Multiplying by 0x02 is easy, that's a binary left-shift (i << 1). But in order
-# to keep the result in eight bits, we take the result modulo 0x1b. If the most
+# Multiplying by 2 is easy, that's a binary left-shift (i << 1). But in order
+# to keep the result in eight bits, we take the result modulo 0x011b. If the most
 # significant bit of the input is set (if i & 0x80), then the result is bigger
-# than 0x1b, and therefore we substract 0x1b from the result, as you would do
+# than 0x011b, and therefore we substract 0x011b from the result, as you would do
 # with normal arithmetic. In our case, that means doing a XOR.
-mul2 = [(i << 1) if i & 0x80 else ((i << 1) ^ 0x1b) for i in range(2**8)]
+mul2 = [0 for i in range(2**8)]
+for i in range(2**8):
+    if i & 0x80:
+        mul2[i] = (i << 1) ^ 0x011b
+    else:
+        mul2[i] = i << 1
 
-# Multplying i by 0x03 is equal to
-#   i * (0x01 + 0x02)
-# = i * 0x01 + i * 0x02
-# = i + i * 0x02
+# Multplying i by 3 is equal to
+#   i * (1 + 2)
+# = i * 1 + i * 2
+# = i + i * 2
 # And since the + is a binary xor, there you are
 mul3 = [i ^ mul2[i] for i in range(2**8)]
 
@@ -89,11 +94,11 @@ def shift_rows(state):
     pass
 
 def mix_columns(state):
-    for c in range(0, block_size, n_rows):
-        state[c + 0] = mul2[state[c + 0]] ^ mul3[state[c + 1]] ^ state[c + 2] ^ state[c + 3]
-        state[c + 1] = state[c + 0] ^ mul2[state[c + 1]] ^  mul3[state[c + 2]] ^ state[c + 3]
-        state[c + 2] = state[c + 0] ^ state[c + 1] ^ mul2[state[c + 2]] ^  mul3[state[c + 3]]
-        state[c + 3] = mul3[state[c + 0]] ^ state[c + 1] ^ state[c + 2] ^  mul2[state[c + 3]]
+    for c in range(0, len(state), n_rows):
+        state[c + 0] = mul2[state[c + 0]] ^ mul3[state[c + 1]] ^ state[c + 2]       ^ state[c + 3]
+        state[c + 1] = state[c + 0]       ^ mul2[state[c + 1]] ^ mul3[state[c + 2]] ^ state[c + 3]
+        state[c + 2] = state[c + 0]       ^ state[c + 1]       ^ mul2[state[c + 2]] ^  mul3[state[c + 3]]
+        state[c + 3] = mul3[state[c + 0]] ^ state[c + 1]       ^ state[c + 2]       ^  mul2[state[c + 3]]
 
 def expand_key(key):
     assert type(key) == bytearray, "key must be of type bytearray"
