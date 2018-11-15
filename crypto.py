@@ -2,8 +2,8 @@
 (AES). Only the function 'encrypt' is meant to be used by the outside, all the
 others are for implementation purposes and are private.
 
-This file works with the Python type 'bytearray', which is basically a mutable
-list of byte values. The message has to be of type bytearray, and the key as well,
+This file works with the Python type 'bytes', which is basically an immutable
+list of byte values. The message has to be of type bytes, and the key as well,
 and the key has to be 16 bytes long.
 """
 
@@ -35,13 +35,13 @@ for i in range(2**8):
 mul3 = [i ^ mul2[i] for i in range(2**8)]
 
 def encrypt(plain_text, key):
-    assert type(plain_text) == bytearray, "plain_text must be of type bytearray"
-    assert type(key) == bytearray, "key must be of type bytearray"
+    assert type(plain_text) == bytes, "plain_text must be of type bytes"
+    assert type(key) == bytes, "key must be of type bytes"
     assert len(key) == block_size, "key must be 128 bits"
 
     # Add padding to the plain text in order to have blocks of 128 bits
-    plain_text = plain_text + bytearray(len(plain_text) % block_size)
-    cypher_text = bytearray()
+    plain_text = plain_text + bytes(len(plain_text) % block_size)
+    cypher_text = bytes()
 
     for i in range(len(plain_text) // block_size):
         # TODO We should use another mode than using always the same cypher
@@ -57,24 +57,24 @@ def aes_encrypt_block(plain_text, key_schedule):
         plain_text: a 128 bits (16 bytes) message in byte string
         key: a 128 bits key in byte string
     """
-    assert type(key_schedule) == bytearray, "key_schedule must be of type bytearray"
-    assert type(plain_text) == bytearray, "plain_text must be of type bytearray"
+    assert type(key_schedule) == bytes, "key_schedule must be of type bytes"
+    assert type(plain_text) == bytes, "plain_text must be of type bytes"
     assert len(key_schedule) == block_size * (n_rounds + 1), "key_schedule must contain n_rounds + 1 sub-keys"
     assert len(plain_text) == block_size, "plain_text must be 128 bits"
 
     state = [b for b in plain_text] # Copy the message
 
-    add_round_key(state, key_schedule[0:block_size])
+    state = add_round_key(state, key_schedule[0:block_size])
 
     for r in range(n_rounds - 1):
-        sub_bytes(state)
-        shift_rows(state)
-        mix_columns(state)
+        state = sub_bytes(state)
+        state = shift_rows(state)
+        state = mix_columns(state)
         state = add_round_key(state, key_schedule[(r + 1) * block_size : (r + 2) * block_size])
 
-    sub_bytes(state)
-    shift_rows(state)
-    add_round_key(state, key_schedule[n_rounds * block_size : ])
+    state = sub_bytes(state)
+    state = shift_rows(state)
+    state = add_round_key(state, key_schedule[n_rounds * block_size : ])
 
     return state
 
@@ -82,25 +82,26 @@ def add_round_key(state, key):
     """Performs an addition of of two polynomials in a Gallois field of base
     two, a.k.a. XOR of input bytes.
     """
-    for i in range(len(state)):
-        state[i] ^= key[i]
+    return bytes(s ^ k for (s, k) in zip(state, key))
 
 def sub_bytes(state):
     # TODO do crypto stuff here
-    pass
+    return state
 
 def shift_rows(state):
     # TODO do crypto stuff here
-    pass
+    return state
 
 def mix_columns(state):
+    res = [0 for i in range(len(state))]
     for c in range(0, len(state), n_rows):
-        state[c + 0] = mul2[state[c + 0]] ^ mul3[state[c + 1]] ^ state[c + 2]       ^ state[c + 3]
-        state[c + 1] = state[c + 0]       ^ mul2[state[c + 1]] ^ mul3[state[c + 2]] ^ state[c + 3]
-        state[c + 2] = state[c + 0]       ^ state[c + 1]       ^ mul2[state[c + 2]] ^  mul3[state[c + 3]]
-        state[c + 3] = mul3[state[c + 0]] ^ state[c + 1]       ^ state[c + 2]       ^  mul2[state[c + 3]]
+        res[c + 0] = mul2[state[c + 0]] ^ mul3[state[c + 1]] ^ state[c + 2]       ^ state[c + 3]
+        res[c + 1] = state[c + 0]       ^ mul2[state[c + 1]] ^ mul3[state[c + 2]] ^ state[c + 3]
+        res[c + 2] = state[c + 0]       ^ state[c + 1]       ^ mul2[state[c + 2]] ^  mul3[state[c + 3]]
+        res[c + 3] = mul3[state[c + 0]] ^ state[c + 1]       ^ state[c + 2]       ^  mul2[state[c + 3]]
+    return bytes(res)
 
 def expand_key(key):
-    assert type(key) == bytearray, "key must be of type bytearray"
+    assert type(key) == bytes, "key must be of type bytes"
     assert len(key) == 16, "key must be 128 bits"
     return key * (n_rounds + 1) # TODO implement the real expand key alg

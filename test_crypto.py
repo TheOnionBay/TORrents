@@ -20,8 +20,7 @@ class TestCrypto(unittest.TestCase):
                 bytearray([0x4d, 0x7e, 0xbd, 0xf8])]
 
         for input, output in zip(inputs, outputs):
-            crypto.mix_columns(input)
-            self.assertEquals(input, output)
+            self.assertEqual(crypto.mix_columns(input), output)
 
 if __name__ == '__main__':
     unittest.main()
