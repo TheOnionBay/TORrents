@@ -44,8 +44,7 @@ def aes_decrypt_block(cipher_text, key_schedule):
     return state
 
 def inv_sub_bytes(state):
-    # TODO do crypto stuff here
-    return state
+    return bytes(inv_s_box[s] for s in state)
 
 def inv_shift_rows(state):
     # TODO do crypto stuff here
