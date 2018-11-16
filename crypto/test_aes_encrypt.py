@@ -3,21 +3,27 @@ import aes_encrypt
 
 class TestAesEncrypt(unittest.TestCase):
     def test_mix_columns(self):
-        # Those test values are taken from Wikipedia
-        # (https://en.wikipedia.org/wiki/Rijndael_MixColumns)
-        inputs = [bytes([0xdb, 0x13, 0x53, 0x45]),
-                bytes([0xf2, 0x0a, 0x22, 0x5c]),
-                bytes([0x01, 0x01, 0x01, 0x01]),
-                bytes([0xc6, 0xc6, 0xc6, 0xc6]),
-                bytes([0xd4, 0xd4, 0xd4, 0xd5]),
-                bytes([0x2d, 0x26, 0x31, 0x4c])]
+        # Those test values are taken from the AES standard, Appendix C
+        inputs = [bytes.fromhex("6353e08c0960e104cd70b751bacad0e7"),
+                bytes.fromhex("a7be1a6997ad739bd8c9ca451f618b61"),
+                bytes.fromhex("3bd92268fc74fb735767cbe0c0590e2d"),
+                bytes.fromhex("2d6d7ef03f33e334093602dd5bfb12c7"),
+                bytes.fromhex("36339d50f9b539269f2c092dc4406d23"),
+                bytes.fromhex("e8dab6901477d4653ff7f5e2e747dd4f"),
+                bytes.fromhex("b458124c68b68a014b99f82e5f15554c"),
+                bytes.fromhex("3e1c22c0b6fcbf768da85067f6170495"),
+                bytes.fromhex("54d990a16ba09ab596bbf40ea111702f")]
 
-        outputs = [bytes([0x8e, 0x4d, 0xa1, 0xbc]),
-                bytes([0x9f, 0xdc, 0x58, 0x9d]),
-                bytes([0x01, 0x01, 0x01, 0x01]),
-                bytes([0xc6, 0xc6, 0xc6, 0xc6]),
-                bytes([0xd5, 0xd5, 0xd7, 0xd6]),
-                bytes([0x4d, 0x7e, 0xbd, 0xf8])]
+        outputs = [bytes.fromhex("5f72641557f5bc92f7be3b291db9f91a"),
+                bytes.fromhex("ff87968431d86a51645151fa773ad009"),
+                bytes.fromhex("4c9c1e66f771f0762c3f868e534df256"),
+                bytes.fromhex("6385b79ffc538df997be478e7547d691"),
+                bytes.fromhex("f4bcd45432e554d075f1d6c51dd03b3c"),
+                bytes.fromhex("9816ee7400f87f556b2c049c8e5ad036"),
+                bytes.fromhex("c57e1c159a9bd286f05f4be098c63439"),
+                bytes.fromhex("baa03de7a1f9b56ed5512cba5f414d23"),
+                bytes.fromhex("e9f74eec023020f61bf2ccf2353c21c7"),
+                bytes.fromhex("ff87968431d86a51645151fa773ad009")]
 
         for input, output in zip(inputs, outputs):
             self.assertEqual(aes_encrypt.mix_columns(input), output)
