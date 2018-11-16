@@ -6,7 +6,7 @@ This file works with the Python type 'bytes', which is basically an immutable
 list of byte values. The message has to be of type bytes, and the key as well,
 and the key has to be 16 bytes long.
 """
-
+from collections import deque
 from aes_common import *
 
 def encrypt(plain_text, key):
@@ -57,8 +57,16 @@ def sub_bytes(state):
     return bytes(s_box[s] for s in state)
 
 def shift_rows(state):
-    # TODO do crypto stuff here
-    return state
+    array=[]
+    for i in range(n_rows):
+        array.append(deque(state[i*n_columns:(i+1)*n_columns]))
+    for i in range(n_rows):
+        array[i].rotate(i)
+    state = []
+    for deq in array:
+        state.extend(deq)
+
+    return bytes(state)
 
 def mix_columns(state):
     res = bytearray(len(state))
