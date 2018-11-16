@@ -5,15 +5,35 @@ n_rows = 4
 block_size = n_columns * n_rows # Number of bytes in one message or one key
 
 def mul(a, b):
+    """Multiplies two bytes as if they represented two binary polynomials, with
+    the result taken modulo 0x11b (a constant, magic polynomial). The idea is to
+    go through each bit of b, and add the value of a for every bit being set,
+    and multiply a by two at every loop turn.
+
+    For example, with b = 5:
+          a * 5
+        = a * (4 + 1)
+        = a * 4 + a * 1
+    We can see that we just add the value of a multiplied by the different
+    powers of two composing b.
+    """
     res = 0
+
+    # Iterate on evey bit of b
     for i in range(8):
+        # For each power of two present in b, add the current value of a
         if b & 1:
             res ^= a
+
+        # The next four lines multiply a by 2 mod 0x11b
         if a & 0x80:
             a = (a << 1) ^ 0x011b
         else:
             a = a << 1
+
+        # Go to the next bit in b
         b >>= 1
+
     return res
 
 
