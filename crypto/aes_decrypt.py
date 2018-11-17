@@ -48,15 +48,22 @@ def inv_sub_bytes(state):
     return bytes(inv_s_box[s] for s in state)
 
 def inv_shift_rows(state):
-    array=[]
+    array = []
+    for r in range(n_rows):
+        array.append(deque([]))
+
+    count = 0
+    for j in range(n_columns):
+        for i in range(n_rows):
+            array[i].append(state[count])
+            count += 1
     for i in range(n_rows):
-        array.append(deque(state[i*n_columns:(i+1)*n_columns]))
-    # TODO do crypto stuff here
-    for i in range(n_rows):
-        array[i].rotate(-i)
+        array[i].rotate(i)
+
     state = []
-    for deq in array:
-        state.extend(deq)
+    for j in range(n_columns):
+        for i in range(n_rows):
+            state.append(array[i][j])
 
     return bytes(state)
 

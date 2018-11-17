@@ -28,5 +28,29 @@ class TestAesEncrypt(unittest.TestCase):
         for input, output in zip(inputs, outputs):
             self.assertEqual(aes_decrypt.inv_mix_columns(input), output)
 
+    def test_inv_shift_rows(self):
+
+        inputs = [bytes.fromhex("6353e08c0960e104cd70b751bacad0e7"),
+                  bytes.fromhex("a7be1a6997ad739bd8c9ca451f618b61"),
+                  bytes.fromhex("3bd92268fc74fb735767cbe0c0590e2d"),
+                  bytes.fromhex("2d6d7ef03f33e334093602dd5bfb12c7"),
+                  bytes.fromhex("36339d50f9b539269f2c092dc4406d23"),
+                  bytes.fromhex("e8dab6901477d4653ff7f5e2e747dd4f"),
+                  bytes.fromhex("b458124c68b68a014b99f82e5f15554c"),
+                  bytes.fromhex("3e1c22c0b6fcbf768da85067f6170495"),
+                  bytes.fromhex("54d990a16ba09ab596bbf40ea111702f")]
+
+        outputs = [bytes.fromhex("63cab7040953d051cd60e0e7ba70e18c"),
+                  bytes.fromhex("a761ca9b97be8b45d8ad1a611fc97369"),
+                  bytes.fromhex("3b59cb73fcd90ee05774222dc067fb68"),
+                  bytes.fromhex("2dfb02343f6d12dd09337ec75b36e3f0"),
+                  bytes.fromhex("36400926f9336d2d9fb59d23c42c3950"),
+                  bytes.fromhex("e847f56514dadde23f77b64fe7f7d490"),
+                  bytes.fromhex("b415f8016858552e4bb6124c5f998a4c"),
+                  bytes.fromhex("3e175076b61c04678dfc2295f6a8bfc0"),
+                  bytes.fromhex("5411f4b56bd9700e96a0902fa1bb9aa1")]
+
+        for input, output in zip(inputs, outputs):
+            self.assertEqual(aes_decrypt.inv_shift_rows(input), output)
 if __name__ == '__main__':
     unittest.main()

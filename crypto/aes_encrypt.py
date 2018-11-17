@@ -58,13 +58,21 @@ def sub_bytes(state):
 
 def shift_rows(state):
     array=[]
+    for r in range(n_rows):
+        array.append(deque([]))
+
+    count=0
+    for j in range(n_columns):
+        for i in range(n_rows):
+            array[i].append(state[count])
+            count+=1
     for i in range(n_rows):
-        array.append(deque(state[i*n_columns:(i+1)*n_columns]))
-    for i in range(n_rows):
-        array[i].rotate(i)
+        array[i].rotate(-i)
+
     state = []
-    for deq in array:
-        state.extend(deq)
+    for j in range(n_columns):
+        for i in range(n_rows):
+            state.append(array[i][j])
 
     return bytes(state)
 
@@ -76,3 +84,6 @@ def mix_columns(state):
         res[c + 2] =        state[c + 0]  ^        state[c + 1]  ^ mul(2, state[c + 2]) ^ mul(3, state[c + 3])
         res[c + 3] = mul(3, state[c + 0]) ^        state[c + 1]  ^        state[c + 2]  ^ mul(2, state[c + 3])
     return bytes(res)
+
+
+shift_rows(bytes.fromhex("63cab7040953d051cd60e0e7ba70e18c"))
