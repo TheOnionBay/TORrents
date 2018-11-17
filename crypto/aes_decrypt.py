@@ -1,4 +1,5 @@
 from aes_common import *
+from collections import deque
 
 def decrypt(cipher_text, key):
     assert type(cipher_text) == bytes, "cipher_text must be of type bytes"
@@ -47,8 +48,24 @@ def inv_sub_bytes(state):
     return bytes(inv_s_box[s] for s in state)
 
 def inv_shift_rows(state):
-    # TODO do crypto stuff here
-    return state
+    array = []
+    for r in range(n_rows):
+        array.append(deque([]))
+
+    count = 0
+    for j in range(n_columns):
+        for i in range(n_rows):
+            array[i].append(state[count])
+            count += 1
+    for i in range(n_rows):
+        array[i].rotate(i)
+
+    state = []
+    for j in range(n_columns):
+        for i in range(n_rows):
+            state.append(array[i][j])
+
+    return bytes(state)
 
 def inv_mix_columns(state):
     res = bytearray(len(state))
