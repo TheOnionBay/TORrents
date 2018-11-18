@@ -53,7 +53,7 @@ def is_probably_prime(n, trials = 20):
     """Implements The Fermat Primality test. If the number n is not prime,
     the probability that this function returns True is 1/(2^trials).
     """
-    for i in range(20):
+    for i in range(trials):
         a = random_gen.randint(2, n)
         if gcd(a, n) != 1:
             return False
