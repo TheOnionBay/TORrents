@@ -66,16 +66,18 @@ def expand_key(key):
     # The beginning of res is the actual key
     for i in range(len(key)):
         res[i] = key[i]
-     # TODO implement the expand key alg here
-    i=len(key)
+
     Nk=4
+    word_size=4
+    i=Nk
     while i<n_columns*(n_rounds+1):
-        temp=deque(list(res[i-4:i]))
+        temp=deque(list(res[(i-1)*word_size:i*word_size]))
         if i % n_columns ==0:
             temp.rotate(-1)
             temp= [s_box[s] for s in temp]
-            temp[0]=temp[0]^round_constants[i//(Nk*4)-1]
-        res[i]=res[i-Nk] ^ temp
+            temp[0]=temp[0]^round_constants[i//Nk-1]
+        for j in range(word_size):
+            res[i*word_size+j]=res[(i-Nk)*word_size+j] ^ temp[j]
         i+=1
     return res
 
@@ -113,5 +115,3 @@ inv_s_box = [0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0
         0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5, 0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61,
         0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d]
 
-
-expand_key(bytes.fromhex("2b7e151628aed2a6abf7158809cf4f3c"))
