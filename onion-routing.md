@@ -3,40 +3,44 @@
 - This is TOR on top of HTTP
 - All members of the network listen on port 5000 (peers, nodes and tracker)
 
+# Terms definitions
+
+* *Symmetric key*: a 128-bits key used for AES encryption/decryption.
+* *Assymetric key*: a 1024-bits key used for RSA encryption/decryption.
+
 # Starting the tunnel
 
 A peer A selects three nodes X, Y, Z among those in the node pool and
-starts by building a circuit. X gets the following POST HTTP message:
+starts by building a circuit. A sends a message to X. X gets the following
+POST HTTP message:
 
 ```json
 {
     "CID": "35ce8f75-6b57-4824-8597-dd756c75a9c5",
-    "payload": <arbitrary data>
+    "payload": <encrypted data>
 }
 ```
 
 where CID stands for CircuitID and is a randomly generated UUIDv4 (it
 is globally unique). Since X has not seen this CID before, it will
-decrypt the payload with its private key, assuming this is the session
+decrypt the payload with its private key, assuming the payload is the encrypted session
 key that will be used in future communications with this
-CircuitID. The CircuitID (CID) will identify this link (part of the
-tunnel), and the node can already put together 3 related elements:
+CircuitID.  Once it has this, the request handler returns HTTP code 200 to say OK.
+
+The CircuitID (CID) will identify this link (the edge from A to X),
+and the node can already put together 3 related elements:
 
 `<InIP, InCID, SessKey>`
 
-Once it has this, the request handler returns HTTP code 200 to say OK.
+Where `InIP` is the IP address of A, `InCID` is
+`35ce8f75-6b57-4824-8597-dd756c75a9c5`, and `SessKey` in the symmetric key.
 
-The session key that's asymmetrically encrypted in the payload is a
+The symmetric key that's asymmetrically encrypted in the payload is a
 128-bit key such as:
 
 `62E45FA2AA90DA900007FE59C88FDAEC`
 
-I generated it with the command:
-
-`$ openssl enc -aes-128-ctr -nosalt -k something_to_use_in_key_derivation -P -iv 0 -md sha1`
-
-It has no salt and IV set to 0 so you should be able to get the same
-key in your computer running that command.
+This key can be generated in Python easily.
 
 Instead of a key, we could very well send key material (a seed) so the
 node generates the key on its own with a key derivation function. It's
@@ -44,16 +48,17 @@ basically the same, so we will send the key directly to simplify
 things.
 
 At this point we have done a simplified version of TLS, in which we
-used public key crypto to exchange a symmetric key.
+used public key cryptography to exchange a symmetric key.
 
 # Extending the tunnel
 
-Client A then sends the following message to node X:
+Client A then sends the following message to node X, encrypting the
+payload with the previously shared session key:
 
 ```json
 {
     "CID": "35ce8f75-6b57-4824-8597-dd756c75a9c5", <-- CID for link A - X
-    "payload": <arbitrary data>
+    "payload": <encrypted data>
 }
 ```
 
@@ -69,10 +74,10 @@ decrypt payload, and build a new message such as:
 }
 ```
 
-and pass it on to the corresponding IP of that CID.
+and pass it on to the outbound IP of that CID.
 
-If it does not have an outbound CID however, this could mean we are on
-the exit node, or we are extending the tunnel, and we do not know
+If it does not have an outbound CID however, this could mean we are
+extending the tunnel, and we do not know
 exactly where to go. We interpret payload differently. In `<decrypted
 data>` we should find the IP where we want to relay the message. It is
 in fact another JSON object and has this structure:
@@ -80,33 +85,39 @@ in fact another JSON object and has this structure:
 ```json
 {
     "to": <IP of Y>,
-    "relay": <message>
+    "relay": <encrypted data>
 }
 ```
 
-So we can build a new object to send like this (with a newly generated
-UUIDv4 for that segment of the network):
+So we know we have to connect to Y. We generate a new CID for that
+new connection. Then, we can build a new object to send like this:
 
 ```json
 {
     "CID": "e9ca363d-c386-415d-9c13-127e0ca0b673", <-- CID for link X - Y
-    "payload": <arbitrary data>
+    "payload": <encrypted data>
 }
 ```
 
-where "relay" becomes "payload".
+where the encrypted data in "relay" is copied in "payload".
+
+When Y receives this message, it interprets it just like how X
+interpreted its first message coming from A.
 
 The idea is to send the same "CREATE TUNNEL" message so node Y does
 not know at what position it is on the chain. Payload is encrypted
 with node Y's public key and it contains the session key shared
-between client A and Y of course.
+between client A and Y.
 
 Node X now keeps in its data structure 5 things in relation:
 
 `<InIP, InCID, SessKey, OutIP, OutCID>`
 
+where `OutIP` is the IP address of Y, and `OutCID` is
+`e9ca363d-c386-415d-9c13-127e0ca0b673`.
+
 So whenever it receives something with a header CID in InCID or OutCID
-it knows what to do.
+it knows where to relay the message.
 
 The same thing is done with the third node to create the tunnel.
 
