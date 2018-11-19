@@ -7,6 +7,13 @@
 
 * *Symmetric key*: a 128-bits key used for AES encryption/decryption.
 * *Assymetric key*: a 1024-bits key used for RSA encryption/decryption.
+* *Upstream*: Direction from client to tracker.
+* *Downstream*: Direction from tracker to client.
+
+In the next sections we will talk about fields having names such as UpID,
+DownCID, etc... In these names, Up and Down stand for *upstream* and
+*downstream*, therefore referring to the connection towards the tracker or
+towards the client, respectively.
 
 # Onion Rounting
 
@@ -120,17 +127,17 @@ where to relay the message.
 
 The same thing is done with the third node to create the tunnel.
 
-As you may notice, we are modeling stateful multiplexed TLS secured TCP
+As you may notice, we are modelling stateful multiplexed TLS secured TCP
 connections (actual implementation of the node network in TOR) with the data
 structure in each node that relates inbound IP's, CID's, SessKey with outbound
 IP's, CID's.
 
 ## Connecting the tracker
 
-When client A has the 3 session keys in its possesion it has to send a final
+When client A has the 3 session keys in its possession it has to send a final
 connection message to the tracker. The exit node Z will get a message with a CID
 for which it has no UpCID (nor any DownCID). This message is intended for the
-tracker. It will decrypt the payload with its private assymetric key as
+tracker. It will decrypt the payload with its private asymmetric key as
 described before and check the `to:` field and relay the message. As when
 extending the tunnel, the node Z will create a new CID for the connection
 between Z and the tracker. The payload of the message is the list of files the
@@ -366,7 +373,7 @@ Z1 with CID `CID9`.
     }
 }
 ```
-At this points, the FSID is no longer needed, so it is not transmitted anymore.
+At this points, the FSID is no longer needed, so it is not transmitted any more.
 
 5) Upon receiving the message from Z2, Z1 does a table lookup in the Relay
 Table, and finds `CID9` in the column UpCID. The matching DownIP is the IP of Y1,
