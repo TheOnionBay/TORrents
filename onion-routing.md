@@ -17,7 +17,7 @@ message:
 ```json
 {
     "CID": "35ce8f75-6b57-4824-8597-dd756c75a9c5",
-    "payload": <encrypted data>
+    "payload": "<encrypted data>"
 }
 ```
 
@@ -57,7 +57,7 @@ the previously shared session key:
 ```json
 {
     "CID": "35ce8f75-6b57-4824-8597-dd756c75a9c5", <-- CID for link A - X
-    "payload": <encrypted data>
+    "payload": "<encrypted data>"
 }
 ```
 
@@ -68,8 +68,8 @@ build a new message such as:
 
 ```json
 {
-    "CID": <outbound CID>,
-    "payload": <decrypted data>
+    "CID": "<outbound CID>",
+    "payload": "<decrypted data>"
 }
 ```
 
@@ -82,8 +82,8 @@ the message. It is in fact another JSON object and has this structure:
 
 ```json
 {
-    "to": <IP of Y>,
-    "relay": <encrypted data>
+    "to": "<IP of Y>",
+    "relay": "<encrypted data>"
 }
 ```
 
@@ -93,7 +93,7 @@ connection. Then, we can build a new object to send like this:
 ```json
 {
     "CID": "e9ca363d-c386-415d-9c13-127e0ca0b673", <-- CID for link X - Y
-    "payload": <encrypted data>
+    "payload": "<encrypted data>"
 }
 ```
 
@@ -157,7 +157,7 @@ in the payload transmitted through the nodes.
 * *List of available files*:
 
 This describes what files a client is ready to share, and is as follow:
-```
+```json
 {
     "type": "ls",
     "files": ["titanic", "privateryan", "shawshank"]
@@ -184,9 +184,9 @@ A client can send a the content of a file after the tracker asked it to do so.
 ```json
 {
     "type": "file",
-    "file": <name of the file>
-    "data": <content of the file>,
-    "FSID": <FSID>
+    "file": "<name of the file>",
+    "data": "<content of the file>",
+    "FSID": "<FSID>"
 }
 ```
 The FSID field is a number uniquely identifying the file sharing process, and is
@@ -201,12 +201,9 @@ tracker.
 
 *A note on control messages:*
 
-Nodes can at any point receive control messages from the tracker.
-
-How do they differentiate between messages intended for them and messages that
-have to go back to the client ?
-
-The CID used by the tracker will be "control". As in:
+Nodes can at any point receive control messages from the tracker. How do they
+differentiate between messages intended for them and messages that have to go
+back to the client ? The CID used by the tracker will be "control". As in:
 
 ```json
 {
@@ -238,27 +235,26 @@ message being sent is
 {
     "CID": "control",
     "type": "make_bridge",
-    "bridge_CID": <CID9>
-    "to": <IP of Z1>
-    "FSID": <FSID1>
+    "bridge_CID": "<CID9>",
+    "to": "<IP of Z1>",
+    "FSID": "<FSID1>"
 }
 ```
 
 Uppon receiving this message, Z2 creates an entry in its File Sharing Table:
 
-| InCID  | OutCID | OutIP    | FSID  |
-| ------ | ------ | -------- | ----- |
-| `CID6`   | `CID9`   | `IP of Z1` | `FSID1` |
+| OutCID | OutIP    | FSID  |
+| ------ | -------- | ----- |
+| `CID9`   | `IP of Z1` | `FSID1` |
 
-An important note is that Z2 knows what to put in the InCID column because the
-control message has been sent through the connection `CID5`. This connection is
-associated to the connection `CID6` in the relay table of Z2.
+So whenever a file message labelled with `FSID1` arrives to Z2, it knows where
+to forward the message, and which CID to put in the message.
 
 The situation is now looking like that:
 
 ![](docs/schematic_bridge.png?raw=true)
 
-4) The tracker sends another *control message* to Z1, instructing it to add a
+4) The tracker sends *control message* to Z1, instructing it to add a
 new entry to its relay table. This will allow the file coming from Z2 to be
 properly redirected to Y1 and ultimately to C1. This control message is
 
@@ -266,13 +262,13 @@ properly redirected to Y1 and ultimately to C1. This control message is
 {
     "CID": "control",
     "type": "receive_bridge",
-    "bridge_CID": <CID9>,
-    "from": <IP of Z2>
-    "FSID": <FSID1>
+    "bridge_CID": "<CID9>",
+    "from": "<IP of Z2>",
+    "FSID": "<FSID1>"
 }
 ```
 
-When Z1 receives this messages, there is already an entry in its relay table
+When Z1 receives this message, there is already an entry in its relay table
 about the link between C1 and the tracker. This entry is as follow
 
 | InIP | InCID | SessKey | OutIP | OutCID |
@@ -281,7 +277,7 @@ about the link between C1 and the tracker. This entry is as follow
 
 Therefore the new entry to add required by the control message is mainly
 a copy of this one, just replacing the OutIP and OutCID by those of the new
-connection. The table is now
+connection coming from Z2. The table is now
 
 | InIP | InCID | SessKey | OutIP | OutCID |
 | ---- | ----- | ------- | ----- | ------ |
@@ -299,26 +295,27 @@ by using the File Sharing ID `FSID1`
 {
     "type": "request",
     "file": "Dikkenek.avi",
-    "FSID": <FSID1>,
+    "FSID": "<FSID1>",
 }
 ```
 
-2) Uppon receiving this request, C2 will fetch the file and send the file
-sharing message to its tunnel through X2. This message is encrypted three times,
-with the symmetric key shared between C2 and X2, Y2 and Z2. The innermost
-payload is as described in the previous section:
+2) Uppon receiving this request, the message has been encrypted three times by
+the three nodes (Z2, Y2 and X2). C2 decrypts the message, fetch the file and
+send the file sharing message to its tunnel through X2. This message is
+encrypted three times. The innermost payload is as described in the previous
+section:
 
 ```json
 {
     "type": "file",
-    "file": "Dikkenek.avi"
-    "data": <content of the file>,
-    "FSID": <FSID>
+    "file": "Dikkenek.avi",
+    "data": "<content of the file>",
+    "FSID": "<FSID>"
 }
 ```
 
-3) When the message arrives to Z2, Z2 decrypts it (with its shared key) and sees
-that this is a file sharing message (since the message is now plaintext).
+3) When the message arrives to Z2, Z2 removes the last layer of encryption and
+sees that this is a file sharing message (the message is now plaintext).
 Therefore, Z2 does a lookup in its File Sharing Table by using the FSID
 contained in the message. This tells Z2 that the file should be transmitted to
 Z1 with CID `CID9`.
@@ -326,11 +323,11 @@ Z1 with CID `CID9`.
 4) Z2 forwards the file message to Z1:
 ```json
 {
-    "CID": <CID9>,
+    "CID": "<CID9>",
     "payload": {
         "type": "file",
         "file": "Dikkenek.avi",
-        "data": <content of the file>
+        "data": "<content of the file>"
     }
 }
 ```
@@ -347,8 +344,8 @@ layers, and finds the file message
 ```json
 {
     "type": "file",
-    "file": "Dikkenek.avi"
-    "data": <content of the file>
+    "file": "Dikkenek.avi",
+    "data": "<content of the file>"
 }
 ```
 Et voilà.
