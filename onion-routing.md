@@ -8,7 +8,9 @@
 * *Symmetric key*: a 128-bits key used for AES encryption/decryption.
 * *Assymetric key*: a 1024-bits key used for RSA encryption/decryption.
 
-# Starting the tunnel
+# Onion Rounting
+
+## Starting the tunnel
 
 A peer A selects three nodes X, Y, Z among those in the node pool and starts by
 building a circuit. A sends a message to X. X gets the following POST HTTP
@@ -30,9 +32,9 @@ this, the request handler returns HTTP code 200 to say OK.
 The CircuitID (CID) will identify this link (the edge from A to X), and the node
 can already put together 3 related elements:
 
-`<InIP, InCID, SessKey>`
+`<DownIP, DownCID, SessKey>`
 
-Where `InIP` is the IP address of A, `InCID` is
+Where `DownIP` is the IP address of A, `DownCID` is
 `35ce8f75-6b57-4824-8597-dd756c75a9c5`, and `SessKey` is the symmetric key.
 
 The symmetric key that's asymmetrically encrypted in the payload is a 128-bit
@@ -49,7 +51,7 @@ same, so we will send the key directly to simplify things.
 At this point we have done a simplified version of TLS, in which we used public
 key cryptography to exchange a symmetric key.
 
-# Extending the tunnel
+## Extending the tunnel
 
 Client A then sends the following message to node X, encrypting the payload with
 the previously shared session key:
@@ -108,12 +110,12 @@ and it contains the session key shared between client A and Y.
 
 Node X now keeps in its data structure 5 things in relation:
 
-`<InIP, InCID, SessKey, OutIP, OutCID>`
+`<DownIP, DownCID, SessKey, UpIP, UpCID>`
 
-where `OutIP` is the IP address of Y, and `OutCID` is
+where `UpIP` is the IP address of Y, and `UpCID` is
 `e9ca363d-c386-415d-9c13-127e0ca0b673`.
 
-So whenever it receives something with a header CID in InCID or OutCID it knows
+So whenever it receives something with a header CID in DownCID or UpCID it knows
 where to relay the message.
 
 The same thing is done with the third node to create the tunnel.
@@ -123,18 +125,18 @@ connections (actual implementation of the node network in TOR) with the data
 structure in each node that relates inbound IP's, CID's, SessKey with outbound
 IP's, CID's.
 
-# Connecting the tracker
+## Connecting the tracker
 
 When client A has the 3 session keys in its possesion it has to send a final
 connection message to the tracker. The exit node Z will get a message with a CID
-for which it has no OutCID (nor any InCID). This message is intended for the
+for which it has no UpCID (nor any DownCID). This message is intended for the
 tracker. It will decrypt the payload with its private assymetric key as
 described before and check the `to:` field and relay the message. As when
 extending the tunnel, the node Z will create a new CID for the connection
 between Z and the tracker. The payload of the message is the list of files the
 client will share to the torrent network.
 
-# Onion Rounting after Tunnel is Established
+## Message Once the Tunnel is Established
 
 The tracker always gets messages in plaintext. This is the TOR way and the
 simplest way. No encryption after the exit nodes.
@@ -146,6 +148,39 @@ the tracker). When the tracker responds, the message is also plaintext between
 the tracker and Z. Z encrypts the message with its symmetric key and send to Y.
 Y encrypts with its symmetric key, and so on. When the client receives a
 message, it always decrypts it with its three symmetric keys.
+
+# Data Structures in a Node
+
+A node contains two tables in memory to forward messages: the *Relay Table* and
+the *File Sharing Table*.
+
+## Relay Table
+The relay table is filled as described in the
+previous section, when a node receives for the first time a message from an
+unknown CID, or the first time a message is relayed for a given CID.
+Its fields are
+
+| DownIP | DownCID | SessKey | UpIP | UpCID |
+| ---- | ----- | ------- | ----- | ------ |
+| | | | | | |
+
+Where DownIP is the IP address of the previous node downstream, DownCID is the
+CID of the connection to the previous node downstream, SessKey is a symmetric
+key shared with the client all the way downstream, UpIP is the IP of the next
+node upstream, and UpCID is the CID of the connection to the next node.
+
+## File Sharing Table
+This table is filled when a node is responsible for transmitting a file coming
+from its client to another client through a bridge. Each file sharing have an
+unique ID, named a *File Sharing ID*, or *FSID* for short. The File Sharing
+Table is as follow
+
+| UpCID | UpIP | FSID |
+| ----- | ---- | ---- |
+| | | |
+
+This tells the node where to forward a file message that arrives with a given
+FSID.
 
 
 # File Sharing Protocol
@@ -241,9 +276,9 @@ message being sent is
 }
 ```
 
-Uppon receiving this message, Z2 creates an entry in its File Sharing Table:
+Upon receiving this message, Z2 creates an entry in its File Sharing Table:
 
-| OutCID | OutIP    | FSID  |
+| UpCID | UpIP    | FSID  |
 | ------ | -------- | ----- |
 | `CID9`   | `IP of Z1` | `FSID1` |
 
@@ -271,15 +306,15 @@ properly redirected to Y1 and ultimately to C1. This control message is
 When Z1 receives this message, there is already an entry in its relay table
 about the link between C1 and the tracker. This entry is as follow
 
-| InIP | InCID | SessKey | OutIP | OutCID |
+| DownIP | DownCID | SessKey | UpIP | UpCID |
 | ---- | ----- | ------- | ----- | ------ |
 | `IP of Y1` | `CID3` | `K_Z1` | `IP_T` | `CID4` |
 
 Therefore the new entry to add required by the control message is mainly
-a copy of this one, just replacing the OutIP and OutCID by those of the new
+a copy of this one, just replacing the UpIP and UpCID by those of the new
 connection coming from Z2. The table is now
 
-| InIP | InCID | SessKey | OutIP | OutCID |
+| DownIP | DownCID | SessKey | UpIP | UpCID |
 | ---- | ----- | ------- | ----- | ------ |
 | `IP of Y1` | `CID3` | `K_Z1` | `IP_T` | `CID4` |
 | `IP of Y1` | `CID3` | `K_Z1` | `IP_Z2` | `CID9` |
@@ -299,7 +334,7 @@ by using the File Sharing ID `FSID1`
 }
 ```
 
-2) Uppon receiving this request, the message has been encrypted three times by
+2) Upon receiving this request, the message has been encrypted three times by
 the three nodes (Z2, Y2 and X2). C2 decrypts the message, fetch the file and
 send the file sharing message to its tunnel through X2. This message is
 encrypted three times. The innermost payload is as described in the previous
@@ -333,9 +368,9 @@ Z1 with CID `CID9`.
 ```
 At this points, the FSID is no longer needed, so it is not transmitted anymore.
 
-5) Uppon receiving the message from Z2, Z1 does a table lookup in the Relay
-Table, and finds `CID9` in the column OutCID. The matching InIP is the IP of Y1,
-the matching InCID is `CID3` and the matching symmetric key is `K_Z1`. Z1
+5) Upon receiving the message from Z2, Z1 does a table lookup in the Relay
+Table, and finds `CID9` in the column UpCID. The matching DownIP is the IP of Y1,
+the matching DownCID is `CID3` and the matching symmetric key is `K_Z1`. Z1
 therefore has every needed information to encrypt and send the message back to
 C1 through Y1.
 
