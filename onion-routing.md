@@ -130,33 +130,47 @@ SessKey with outbound IP's, CID's.
 
 When client A has the 3 session keys in its possesion it has to send a
 final connection message to the tracker. The exit node Z will get a
-message with a CID for which it has no OutCID. This message is
-intended for the tracker. It will decrypt the payload as usual and
-check the `to:` field and relay the message. The message can be foo,
-or OK, or anything (even the list of files...).
+message with a CID for which it has no OutCID (nor any InCID). This message is
+intended for the tracker. It will decrypt the payload with its private
+assymetric key as described before and
+check the `to:` field and relay the message. As when extending the
+tunnel, the node Z will create a new CID for the connection between
+Z and the tracker.
+The payload of the message is the list of files the client will share
+to the torrent network.
 
-We simply want Z (the exit node) to include the necessary information
-in its data structure to relay messages to the tracker without looking
-up a `to:` field. This is why the message can be anything and not an
-extend instruction to exchange keys.
+# Onion Rounting after Tunnel is Established
 
-# Client - Tracker communication
+The tracker always gets messages in plaintext. This is the TOR way and the
+simplest way. No encryption after the exit nodes.
 
-The tracker always gets things in plaintext. This is the TOR way and the
-simplest way.
+When a client sends a message to the tracker, the message is encrypted
+by the client with the three symmetric keys of the three nodes X, Y and Z.
+Each node decrypts the message and relay to the next (thus it is plaintext
+between Z and the tracker). When the tracker responds, the message is also 
+plaintext between the tracker and Z. Z encrypts the message with its
+symmetric key and send to Y. Y encrypts with its symmetric key, and so on.
+When the client receives a message, it always decrypts it with its
+three symmetric keys.
 
-Now the sending is straight-forward.
 
-The client will send the list of files it has to tracker:
+# Client - Tracker Protocol
 
+## From Client to Tracker
+The client can send three types of message to the tracker. These
+JSON structures are carried in the payload transmitted through the
+nodes.
+
+### List of available files
+This describes what files a client is ready to share, and is as follow:
 ```
 {
     "type": "ls",
     "files": ["titanic", "privateryan", "shawshank"]
 }
 ```
-
-another kind of message it can send:
+### File Request
+A client can request a file to the tracker.
 
 ```json
 {
@@ -165,10 +179,35 @@ another kind of message it can send:
 }
 ```
 
-This is obviously the kernel of the whole thing sent. It has to be
-wrapped in successive layers of encryption (3).
+### Send a file chunk
+A client can send a chunk of a file after the tracker
+asked it to do so.
 
-# Tracker-nodes control messages
+```json
+{
+    "type": "file_chunk",
+    "chunk_idx": <index of the chunk in the file> 
+    "data": <bytes data>
+}
+```
+The exact format of this message is described later.
+
+## From Tracker to Client
+A tracker can send one type of message to the client
+
+### Asking for file sharing
+The tracker can send a request to a client to share a file.
+```json
+{
+    "type": "request",
+    "file": "borat"
+}
+```
+The redirection of the file messages to the requesting client 
+is done **by the tracker** with control messages to the exit nodes,
+the client just has to send `"file_chunk"` messages to its tunnel.
+
+## From Tracker to Exit Node - Control messages
 
 Nodes can at any point receive control messages from the tracker.
 
@@ -181,24 +220,14 @@ The CID used by the tracker will be "control". As in:
 {
     "CID": "control",
     "payload": {
-        "type": "bridge",
-        "FromCID":
-        ???
+        ...
     }
 }
 ```
+
 
 # Client
 
 The client will show an HTML page with an input to type in the file
 wanted. Since it is also a Flask server, it can receive the tracker
 requests and files from other peers.
-
-So for a client to send a file to the network:
-
-```json
-{
-    "type": "share",
-    "file": "barbie"
-}
-```
