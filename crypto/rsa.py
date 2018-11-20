@@ -97,9 +97,11 @@ def random_prime(width):
     """Generate a random number which has a high probability of being
     a prime number, and has a bit length of at most width.
     """
+    # We define a maximum and a minimum to pick the number, to ensure that
+    # the product of two of these random primes has always at least width * 2
+    # bits.
     max = (1 << width) - 1 # Equals 2^width - 1, all bit sets
-    # TODO check the formula for min below
-    min = 6074001000 << (width - 33) if width > 33 else int(sqrt(max))
+    min = int(sqrt(2) * (1 << (width - 1))) # Equals sqrt(2) * 2^(width - 1)
     while True:
         res = random_gen.randint(min, max)
         if is_probably_prime(res):
