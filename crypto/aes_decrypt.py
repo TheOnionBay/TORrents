@@ -40,7 +40,7 @@ def aes_decrypt_block(cipher_text, key_schedule):
 
     state = inv_shift_rows(state)
     state = inv_sub_bytes(state)
-    state = inv_add_round_key(state, key_schedule[n_rounds * block_size : ])
+    state = add_round_key(state, key_schedule[n_rounds * block_size : ])
 
     return state
 
