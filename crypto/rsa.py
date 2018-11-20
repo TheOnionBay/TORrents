@@ -39,10 +39,11 @@ def generate_rsa(key_width):
 
 def rsa_encrypt(plain_text, public_key):
     """Encrypts a message. The message has to be of type int (you can convert
-    bytes to create an int value however you want) and have a bit width less
-    than the key. Therefore, this is suited to encrypt small messages at once.
+    bytes to create an int value however you want) and have a value less than
+    the modulus of the key (public_key.n). Therefore, this is suited to encrypt
+    small messages at once.
     Parameters:
-        plain_text: the message as an int, with plain_text.bit_length() <= key_width
+        plain_text: the message as an int, with plain_text < public_key.n
         public_key: the public key, created by generate_rsa.
     Returns:
         Another integer, the cipher text.
@@ -120,12 +121,3 @@ def exp_mod(a, e, b):
         if e & (1 << i):
             product *= power_of_a
     return product % b
-
-if __name__ == "__main__":
-    pub, priv = generate_rsa(1024)
-    message = 424242
-    print(message)
-    cipher_text = rsa_encrypt(message, pub)
-    print(cipher_text)
-    plain_text = rsa_decrypt(cipher_text, priv)
-    print(plain_text)
