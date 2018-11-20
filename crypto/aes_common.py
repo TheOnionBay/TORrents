@@ -1,9 +1,10 @@
 from collections import deque
 
 n_rounds = 10 # Defined in the standard of AES for 128 bits key
-n_columns = 4
 n_rows = 4
-block_size = n_columns * n_rows # Number of bytes in one message or one key
+n_columns = 4
+block_size = n_columns * n_rows # Number of bytes in one message
+key_size = 4 * n_rows # Number of bytes in a key.
 
 def mul(a, b):
     """Multiplies two bytes as if they represented two binary polynomials, with
@@ -51,8 +52,8 @@ def expand_key(key):
     round_constants = [0x02 for i in range(n_rounds)]
     for i in range(1, n_rounds):
         round_constants[i] = mul(0x02, round_constants[i - 1])
-    round_constants[1:]=round_constants[:-1]
-    round_constants[0]=1
+    round_constants[1:] = round_constants[:-1]
+    round_constants[0] = 1
     # for i in range(0,n_rounds):
     #     round_constants[i]="{0:b}".format(round_constants[i])
     #     while len(round_constants[i]) < 8:
@@ -67,18 +68,16 @@ def expand_key(key):
     for i in range(len(key)):
         res[i] = key[i]
 
-    Nk=4
-    word_size=4
-    i=Nk
-    while i<n_columns*(n_rounds+1):
-        temp=deque(list(res[(i-1)*word_size:i*word_size]))
-        if i % n_columns ==0:
+    for i in range(n_columns, n_columns * (n_rounds + 1)):
+        temp = deque(list(res[(i - 1) * n_rows : i * n_rows]))
+
+        if i % n_columns == 0:
             temp.rotate(-1)
-            temp= [s_box[s] for s in temp]
-            temp[0]=temp[0]^round_constants[i//Nk-1]
-        for j in range(word_size):
-            res[i*word_size+j]=res[(i-Nk)*word_size+j] ^ temp[j]
-        i+=1
+            temp = [s_box[s] for s in temp]
+            temp[0] = temp[0] ^ round_constants[i // n_columns - 1]
+
+        for j in range(n_rows):
+            res[i * n_rows + j] = res[(i - n_columns) * n_rows + j] ^ temp[j]
     return bytes(res)
 
 s_box = [0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,

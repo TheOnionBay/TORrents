@@ -7,7 +7,7 @@ from random_bytes import generate_bytes
 class TestAesEncrypt(unittest.TestCase):
     def test_encrypt_then_decrypt(self):
         # Generate a random key
-        key = generate_bytes(aes_common.block_size)
+        key = generate_bytes(aes_common.key_size)
         number_of_tests = 128
         # Generate a bunch of random messages to encrypt and then decrypt.
         test_values = [generate_bytes(aes_common.block_size) for _ in range(number_of_tests)]
