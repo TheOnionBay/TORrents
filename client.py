@@ -1,7 +1,8 @@
+import os
 import requests
 import json
 import argparse
-from flask import Flask
+from flask import Flask, render_template
 
 from common.network_info import *
 
@@ -60,12 +61,12 @@ def client_loop():
 fl = file_list()
 sesskeys = []
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.path.abspath('client/templates'))
 
 @app.route("/", methods=['GET'])
 def index():
     # Serve HTML page with input to request file
-    return "Welcome to TORrents !"
+    return render_template("index.html")
 
 @app.route("/", methods=['POST'])
 def main_handler():
@@ -79,8 +80,9 @@ def main_handler():
 @app.route("/request", methods=['POST'])
 def request():
     # Get filename wanted
-    # Send request to tracker
-    pass
+    # Send request to trackere
+    print(request)
+    return "File requested"
 
 
 app.run()
