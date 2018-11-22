@@ -1,5 +1,6 @@
 import unittest
 import aes_decrypt
+import aes_common
 
 class TestAesDecrypt(unittest.TestCase):
     def test_inv_mix_columns(self):
@@ -51,5 +52,14 @@ class TestAesDecrypt(unittest.TestCase):
 
         for input, output in zip(inputs, outputs):
             self.assertEqual(aes_decrypt.inv_shift_rows(input), output)
+
+    def test_encrypt_block(self):
+        # Values taken from the AES standard, Appendix C
+        plain_text = bytes.fromhex("69c4e0d86a7b0430d8cdb78070b4c55a")
+        key = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
+        key = aes_common.expand_key(key)
+        cipher_text = bytes.fromhex("00112233445566778899aabbccddeeff")
+        self.assertEqual(aes_decrypt.aes_decrypt_block(plain_text, key), cipher_text)
+
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@ import aes_decrypt
 import aes_common
 from random_bytes import generate_bytes
 
-class TestAesEncrypt(unittest.TestCase):
+class TestAesCommon(unittest.TestCase):
     def test_expand_key(self):
         # Those test values are taken from the AES standard, Appendix A
         input = bytes.fromhex("2b7e151628aed2a6abf7158809cf4f3c")

@@ -2,9 +2,9 @@ from collections import deque
 
 n_rounds = 10 # Defined in the standard of AES for 128 bits key
 n_rows = 4
-n_columns = 4
+n_columns = 4 # Nb in AES standard
 block_size = n_columns * n_rows # Number of bytes in one message
-key_size = 4 * n_rows # Number of bytes in a key.
+key_size = 4 * n_rows # number of bytes in a key
 
 def mul(a, b):
     """Multiplies two bytes as if they represented two binary polynomials, with
@@ -38,15 +38,18 @@ def mul(a, b):
 
     return res
 
+def xor(a, b):
+    return bytes(a_ ^ b_ for (a_, b_) in zip(a, b))
+
 def add_round_key(state, key):
     """Performs an addition of of two polynomials in a Gallois field of base
     two, a.k.a. XOR of input bytes.
     """
-    return bytes(s ^ k for (s, k) in zip(state, key))
+    return xor(state, key)
 
 def expand_key(key):
     assert type(key) == bytes, "key must be of type bytes"
-    assert len(key) == 16, "key must be 128 bits"
+    assert len(key) == key_size, "key must be 128 bits"
 
     # round_constants is an array with the first powers of 0x02
     round_constants = [0x02 for i in range(n_rounds)]
