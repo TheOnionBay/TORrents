@@ -176,19 +176,30 @@ CID of the connection to the previous node downstream, SessKey is a symmetric
 key shared with the client all the way downstream, UpIP is the IP of the next
 node upstream, and UpCID is the CID of the connection to the next node.
 
-## File Sharing Table
+## Upstream File Sharing Table
 This table is filled when a node is responsible for transmitting a file coming
 from its client to another client through a bridge. Each file sharing have an
 unique ID, named a *File Sharing ID*, or *FSID* for short. The File Sharing
 Table is as follow
 
-| UpCID | UpIP | FSID |
+| BridgeCID | BridgeIP | FSID |
 | ----- | ---- | ---- |
 | | | |
 
 This tells the node where to forward a file message that arrives with a given
 FSID.
 
+## Downstream File Sharing Table
+This table is filled when a node is going to receive a file coming from  another
+node through a bridge. The DownCID is one of the downstream connection that the
+node has already, and BridgeCID is the CID that the node at the other side of
+the bridge is used to connect to this node (CID9 in the image below). To get
+the correct downstream ID and SessKey, the Relay Table should be indexed with
+DownCID.
+
+| DownCID | BridgeCID |
+| ----- | ---- |
+| | |
 
 # File Sharing Protocol
 
@@ -270,8 +281,8 @@ request. Let's name this number `FSID1`.
 2) The tracker creates a new CircuitID that will be used in the link to bridge
 Z2 to Z1. Let's name this new CID `CID9`.
 3) The tracker sends a *control message* to Z2, instructing it to add a new
-entry to its *File Sharing Table* to properly redirect the file to Z1. The
-message being sent is
+entry to its *Upstream File Sharing Table* to properly redirect the file to Z1.
+The message being sent is
 
 ```json
 {
@@ -283,9 +294,9 @@ message being sent is
 }
 ```
 
-Upon receiving this message, Z2 creates an entry in its File Sharing Table:
+Upon receiving this message, Z2 creates an entry in its Upstream File Sharing Table:
 
-| UpCID | UpIP    | FSID  |
+| BridgeCID | BridgeIP    | FSID  |
 | ------ | -------- | ----- |
 | `CID9`   | `IP of Z1` | `FSID1` |
 
@@ -296,35 +307,22 @@ The situation is now looking like that:
 
 ![](docs/schematic_bridge.png?raw=true)
 
-4) The tracker sends *control message* to Z1, instructing it to add a
-new entry to its relay table. This will allow the file coming from Z2 to be
-properly redirected to Y1 and ultimately to C1. This control message is
+4) The tracker sends *control message* to Z1, instructing it to add a new entry
+to its *Downstream File Sharing Table*. This will allow the file coming from Z2
+to be properly redirected to Y1 and ultimately to C1. This control message is
 
 ```json
 {
     "CID": "control",
     "type": "receive_bridge",
-    "bridge_CID": "<CID9>",
-    "from": "<IP of Z2>",
-    "FSID": "<FSID1>"
+    "bridge_CID": "<CID9>"
 }
 ```
 
-When Z1 receives this message, there is already an entry in its relay table
-about the link between C1 and the tracker. This entry is as follow
-
-| DownIP | DownCID | SessKey | UpIP | UpCID |
-| ---- | ----- | ------- | ----- | ------ |
-| `IP of Y1` | `CID3` | `K_Z1` | `IP_T` | `CID4` |
-
-Therefore the new entry to add required by the control message is mainly
-a copy of this one, just replacing the UpIP and UpCID by those of the new
-connection coming from Z2. The table is now
-
-| DownIP | DownCID | SessKey | UpIP | UpCID |
-| ---- | ----- | ------- | ----- | ------ |
-| `IP of Y1` | `CID3` | `K_Z1` | `IP_T` | `CID4` |
-| `IP of Y1` | `CID3` | `K_Z1` | `IP_Z2` | `CID9` |
+The Downstream File Sharing Table is now
+| DownCID | BridgeCID |
+| ----- | ---- |
+| `<CID3>` | `<CID9>` |
 
 
 * *File sharing instruction*:
@@ -358,7 +356,7 @@ section:
 
 3) When the message arrives to Z2, Z2 removes the last layer of encryption and
 sees that this is a file sharing message (the message is now plaintext).
-Therefore, Z2 does a lookup in its File Sharing Table by using the FSID
+Therefore, Z2 does a lookup in its Upstream File Sharing Table by using the FSID
 contained in the message. This tells Z2 that the file should be transmitted to
 Z1 with CID `CID9`.
 
@@ -375,11 +373,12 @@ Z1 with CID `CID9`.
 ```
 At this points, the FSID is no longer needed, so it is not transmitted any more.
 
-5) Upon receiving the message from Z2, Z1 does a table lookup in the Relay
-Table, and finds `CID9` in the column UpCID. The matching DownIP is the IP of Y1,
-the matching DownCID is `CID3` and the matching symmetric key is `K_Z1`. Z1
-therefore has every needed information to encrypt and send the message back to
-C1 through Y1.
+5) Upon receiving the message from Z2, Z1 does a table lookup in the Downstream
+File Sharing Table, and finds `CID9` in the column BridgeCID. The matching
+DownCID is `CID3`. Z1 can therefore look at the Relay Table to find the IP and
+SessKey associated to `CID3`, and finds the IP of Y1, and `K_Z1` for the
+symmetric key. Z1 therefore has every needed information to encrypt and send the
+message back to C1 through Y1.
 
 6) The message arrives back, encrypted three times to C1. C1 decrypts the three
 layers, and finds the file message
