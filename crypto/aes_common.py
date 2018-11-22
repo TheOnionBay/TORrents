@@ -54,12 +54,6 @@ def expand_key(key):
         round_constants[i] = mul(0x02, round_constants[i - 1])
     round_constants[1:] = round_constants[:-1]
     round_constants[0] = 1
-    # for i in range(0,n_rounds):
-    #     round_constants[i]="{0:b}".format(round_constants[i])
-    #     while len(round_constants[i]) < 8:
-    #         round_constants[i] = '0' + round_constants[i]
-    #
-    #     round_constants[i]=bytes.fromhex(round_constants[i])
 
     res = bytearray((n_rounds + 1) * block_size)
 
@@ -77,7 +71,7 @@ def expand_key(key):
 
         for j in range(n_rows):
             res[i * n_rows + j] = res[(i - n_columns) * n_rows + j] ^ temp[j]
-            
+
     return bytes(res)
 
 s_box = [0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
