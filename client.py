@@ -1,4 +1,23 @@
 import requests
+import json
+import argparse
+from flask import Flask
+
+from common.network_info import *
+
+parser = argparse.ArgumentParser(description='TORrent client')
+parser.add_argument('lof', type=open, help='list of files')
+
+args = parser.parse_args()
+
+
+
+def file_list():
+    """Parses the JSON document containing the list of files for this
+    client
+
+    """
+    return json.loads(args.lof.read())
 
 
 def select_nodes(node_pool):
@@ -28,7 +47,40 @@ def client_loop():
     a read-eval loop where the input + newline is considered the file
     this client is requesting to the tracker/torrent network
 
+
+
+
     """
     # read eval loop from stdin
     # send request
     pass
+
+
+
+fl = file_list()
+sesskeys = []
+
+app = Flask(__name__)
+
+@app.route("/", methods=['GET'])
+def index():
+    # Serve HTML page with input to request file
+    return "Welcome to TORrents !"
+
+@app.route("/", methods=['POST'])
+def main_handler():
+    """Client will receive comms from the tracker and files from other
+    peers on this handler
+
+    """
+    # Unencrypt request with keys available, max 3 times !
+    pass
+
+@app.route("/request", methods=['POST'])
+def request():
+    # Get filename wanted
+    # Send request to tracker
+    pass
+
+
+app.run()
