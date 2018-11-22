@@ -7,15 +7,22 @@ def decrypt(cipher_text, key):
     assert type(key) == bytes, "key must be of type bytes"
     assert len(key) == block_size, "key must be 128 bits"
 
-    plain_text = bytes()
+    res = bytes()
+    key_schedule = expand_key(key)
+    # Extract the init vector from the start of the cipher text
+    init_vector = cipher_text[:block_size]
+    cipher_text = cipher_text[block_size:]
+    previous_cipher_text = init_vector
 
     for i in range(len(cipher_text) // block_size):
-        # TODO We should use another mode than using always the same cypher
-        key_schedule = expand_key(key)
-        cipher_text_block = cipher_text[i * block_size : (i + 1) * block_size]
-        plain_text += aes_decrypt_block(cipher_text_block, key_schedule)
+        block = cipher_text[i * block_size : (i + 1) * block_size]
+        # Decrypt using Cipher Block Chaining (CBC) mode
+        plain_text_block = aes_decrypt_block(block, key_schedule)
+        plain_text_block = xor(previous_cipher_text, plain_text_block)
+        previous_cipher_text = block
+        res += plain_text_block
 
-    return plain_text
+    return res
 
 def aes_decrypt_block(cipher_text, key_schedule):
     """Decrypts a message using AES-128.
@@ -30,17 +37,20 @@ def aes_decrypt_block(cipher_text, key_schedule):
 
     state = [b for b in cipher_text] # Copy the message
 
-    state = add_round_key(state, key_schedule[0:block_size])
+    # Add the last key first
+    state = add_round_key(state, key_schedule[n_rounds * block_size : (n_rounds + 1) * block_size])
 
-    for r in range(n_rounds - 1):
+    # Use the keys in descending order
+    for r in range(n_rounds - 1, 0, -1):
         state = inv_shift_rows(state)
         state = inv_sub_bytes(state)
-        state = add_round_key(state, key_schedule[(r + 1) * block_size : (r + 2) * block_size])
+        state = add_round_key(state, key_schedule[r * block_size : (r + 1) * block_size])
         state = inv_mix_columns(state)
 
     state = inv_shift_rows(state)
     state = inv_sub_bytes(state)
-    state = inv_add_round_key(state, key_schedule[n_rounds * block_size : ])
+    # Now add the first key
+    state = add_round_key(state, key_schedule[:block_size])
 
     return state
 

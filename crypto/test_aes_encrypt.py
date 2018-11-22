@@ -1,9 +1,24 @@
 import unittest
 import aes_encrypt
+import aes_decrypt
+import aes_common
+from random_bytes import generate_bytes
 
 class TestAesEncrypt(unittest.TestCase):
+    def test_encrypt_then_decrypt(self):
+        # Generate a random key
+        key = generate_bytes(aes_common.key_size)
+        number_of_tests = 128
+        # Generate a bunch of random messages to encrypt and then decrypt.
+        test_values = [generate_bytes(aes_common.block_size) for _ in range(number_of_tests)]
+
+        for i, test_value in enumerate(test_values):
+            cipher_text = aes_encrypt.encrypt(test_value, key)
+            decrypted_text = aes_decrypt.decrypt(cipher_text, key)
+            self.assertEqual(test_value, decrypted_text)
+
     def test_mix_columns(self):
-        # Those test values are taken from the AES standard, Appendix C
+        # Those test values are taken from the AES standard, Appendix C.1
         inputs = [bytes.fromhex("6353e08c0960e104cd70b751bacad0e7"),
                 bytes.fromhex("a7be1a6997ad739bd8c9ca451f618b61"),
                 bytes.fromhex("3bd92268fc74fb735767cbe0c0590e2d"),
@@ -51,6 +66,14 @@ class TestAesEncrypt(unittest.TestCase):
 
         for input, output in zip(inputs, outputs):
             self.assertEqual(aes_encrypt.shift_rows(input), output)
+
+    def test_encrypt_block(self):
+        # Values taken from the AES standard, Appendix C
+        plain_text = bytes.fromhex("00112233445566778899aabbccddeeff")
+        key = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
+        key = aes_common.expand_key(key)
+        cipher_text = bytes.fromhex("69c4e0d86a7b0430d8cdb78070b4c55a")
+        self.assertEqual(aes_encrypt.aes_encrypt_block(plain_text, key), cipher_text)
 
 if __name__ == '__main__':
     unittest.main()
