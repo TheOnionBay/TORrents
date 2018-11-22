@@ -63,7 +63,6 @@ def expand_key(key):
 
     res = bytearray((n_rounds + 1) * block_size)
 
-
     # The beginning of res is the actual key
     for i in range(len(key)):
         res[i] = key[i]
@@ -78,6 +77,7 @@ def expand_key(key):
 
         for j in range(n_rows):
             res[i * n_rows + j] = res[(i - n_columns) * n_rows + j] ^ temp[j]
+            
     return bytes(res)
 
 s_box = [0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
