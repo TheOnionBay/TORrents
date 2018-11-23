@@ -8,23 +8,34 @@ and the key has to be 16 bytes long.
 """
 from collections import deque
 from aes_common import *
+from random_bytes import generate_bytes
 
 def encrypt(plain_text, key):
     assert type(plain_text) == bytes, "plain_text must be of type bytes"
     assert type(key) == bytes, "key must be of type bytes"
     assert len(key) == block_size, "key must be 128 bits"
 
+    init_vector = generate_bytes(block_size)
+
+    # We append the init vector to the cipher text, so that the recipient can
+    # read it.
+    res = init_vector
+
     # Add padding to the plain text in order to have blocks of 128 bits
     plain_text = plain_text + bytes(len(plain_text) % block_size)
-    cypher_text = bytes()
+
+    key_schedule = expand_key(key)
+    previous_cipher_text = init_vector
 
     for i in range(len(plain_text) // block_size):
-        # TODO We should use another mode than using always the same cypher
-        key_schedule = expand_key(key)
-        plain_text_block = plain_text[i * block_size : (i + 1) * block_size]
-        cypher_text += aes_encrypt_block(plain_text_block, key_schedule)
+        block = plain_text[i * block_size : (i + 1) * block_size]
+        # We use the Cipher Block Chaining (CBC) mode.
+        block = xor(previous_cipher_text, block)
+        cipher_text_block = aes_encrypt_block(block, key_schedule)
+        previous_cipher_text = cipher_text_block
+        res += cipher_text_block
 
-    return cypher_text
+    return res
 
 def aes_encrypt_block(plain_text, key_schedule):
     """Encrypts a message using AES-128.

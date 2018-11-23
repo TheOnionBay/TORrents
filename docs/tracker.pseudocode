@@ -1,0 +1,51 @@
+table files_per_client
+
+function handle_message(message):
+	# If a new client registers and sends the files he/she possesses
+	if message["payload"]["type"] == "ls":
+		# Keep in memory the list of files and associate it with the inbound CID
+		files_per_client.add(CID = message["CID"], files = message["payload"]["files"])
+
+	# If the message is a file request, we have to make a bridge and ask the
+	# client to send the file
+	if message["payload"]["type"] == "request":
+		file = message["payload"]["file"]
+
+		# Find the CID of the client owning the requested file
+		owning_client_CID, owning_client_IP = files_per_client.lookup(...)
+
+		if nobody has the file:
+			send error back
+		else:
+			bridge_cid = generate_cid()
+			fsid = generate_fsid()
+
+			# Send a message to the node at the start of the bridge
+			make_bridge_message = {
+				"CID": "control",
+			    "type": "make_bridge",
+			    "bridge_CID": bridge_cid,
+			    "to": message.IP,
+			    "FSID": fsid
+			}
+			send(make_bridge_message, owning_client_IP)
+
+			# Send a message to the node at the end of the bridge
+			receive_bridge_message = {
+			    "CID": "control",
+				"tracker_CID": message["CID"], # TODO this tracker_CID field is not in the doc yet
+			    "type": "receive_bridge",
+			    "bridge_CID": bridge_cid
+			}
+			send(receive_bridge_message, message.IP)
+
+			# Send a message to the client, asking he/she to send the file
+			request_message = {
+				"CID": owning_client_CID,
+				"payload": {
+					"type": "request",
+					"file": file,
+					"FSID": fsid
+				}
+			}
+			send(request_message, owning_client_IP)
