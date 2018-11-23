@@ -1,0 +1,47 @@
+tracker_ip
+nodes_ip
+nodes_pub_key
+my_files
+nodes_sess_keys
+
+function init:
+	make_tunnel()
+	message = {
+		"type": "ls",
+		"files": my_files.names()
+	}
+	send_to_tunnel(message)
+
+function when user wants a file named requested_file:
+	message = {
+		"type": request,
+		"file": requested_file
+	}
+	send_to_tunnel(message)
+
+function handle_message(message):
+	# Decrypt the three layers of the message with the three shared session keys
+	message = aes_decrypt_3_nodes(message, nodes_sess_keys)
+
+	# If the message is a request to share a file we have
+	if message["type"] == "request":
+		file_content = my_files[message["file"]]
+		# Encrypt the response with three layers of onions
+		response = aes_encrypt_3_nodes({
+			"type": "file",
+			"file": message["file"],
+			"FSID": message["FSID"],
+			"data": my_files.content_of(message["file"])
+		}, nodes_sess_keys)
+		send_to_tunnel(response)
+
+	# If the message is a response from the server telling us what files are
+	# available on the network
+	# TODO this is not written in the doc yet
+	else if message["type"] == "available_files":
+		show to the user the list of available files from message["files"]
+
+	# The only other type of message we can get is a file we requested before
+	else:
+		show error if message["type"] != "file"
+		write message["data"] to a file named message["file"]
