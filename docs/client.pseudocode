@@ -3,21 +3,31 @@ nodes_ip
 nodes_pub_key
 my_files
 nodes_sess_keys
+upstream_cid
+upstream_ip
 
 function init:
 	make_tunnel()
+	# Now nodes_sess_keys, upstream_cid and upstream_ip are defined since the
+	# tunnel is established
 	message = {
-		"type": "ls",
-		"files": my_files.names()
+		"CID": upstream_cid,
+		"payload": aes_encrypt_3_nodes({
+			"type": "ls",
+			"files": my_files.names()
+		}, nodes_sess_keys)
 	}
-	send_to_tunnel(message)
+	send(message, upstream_ip)
 
 function when user wants a file named requested_file:
 	message = {
-		"type": request,
-		"file": requested_file
+		"CID": upstream_cid,
+		"payload": aes_encrypt_3_nodes({
+			"type": request,
+			"file": requested_file
+		}, nodes_sess_keys)
 	}
-	send_to_tunnel(message)
+	send(message, upstream_ip)
 
 function handle_message(message):
 	# Decrypt the three layers of the message with the three shared session keys
@@ -25,15 +35,17 @@ function handle_message(message):
 
 	# If the message is a request to share a file we have
 	if message["type"] == "request":
-		file_content = my_files[message["file"]]
 		# Encrypt the response with three layers of onions
-		response = aes_encrypt_3_nodes({
-			"type": "file",
-			"file": message["file"],
-			"FSID": message["FSID"],
-			"data": my_files.content_of(message["file"])
-		}, nodes_sess_keys)
-		send_to_tunnel(response)
+		message = {
+			"CID": upstream_cid,
+			"payload": aes_encrypt_3_nodes({
+				"type": "file",
+				"file": message["file"],
+				"FSID": message["FSID"],
+				"data": my_files.content_of(message["file"])
+			}, nodes_sess_keys)
+		}
+		send_to_tunnel(message, upstream_ip)
 
 	# If the message is a response from the server telling us what files are
 	# available on the network
