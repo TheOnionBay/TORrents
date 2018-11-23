@@ -22,7 +22,7 @@ def encrypt(plain_text, key):
     res = init_vector
 
     # Add padding to the plain text in order to have blocks of 128 bits
-    plain_text = plain_text + bytes(len(plain_text) % block_size)
+    plain_text = plain_text + bytes((block_size - len(plain_text)) % block_size)
 
     key_schedule = expand_key(key)
     previous_cipher_text = init_vector
