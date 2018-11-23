@@ -1,7 +1,9 @@
+
+import os
 import requests
 import json
 import argparse
-from flask import Flask
+from flask import Flask, render_template
 from random import sample
 from crypto.random_bytes import generate_bytes
 
@@ -11,12 +13,10 @@ from common.network_info import tracker, node_pool
 class Client(Flask):
 
     def __init__(self, name, filenames):
-        super().__init__(name)
+        super().__init__(name, template_folder=os.path.abspath('client/templates'))
         self.fl = self.file_list(filenames)
         self.tunnel_nodes = self.select_nodes(node_pool)
         self.sesskeys = []
-        self.run()
-        self.conn()
 
     def file_list(self, file):
         """Parses the JSON document containing the list of files for this
@@ -91,7 +91,7 @@ client = Client(__name__, args.lof.read())
 @client.route("/", methods=['GET'])
 def index():
     # Serve HTML page with input to request file
-    return "Welcome to TORrents !"
+    return render_template("index.html")
 
 
 @client.route("/", methods=['POST'])
@@ -106,5 +106,10 @@ def main_handler():
 @client.route("/request", methods=['POST'])
 def request():
     # Get filename wanted
-    # Send request to tracker
-    pass
+    # Send request to trackere
+    print(request)
+    return "File requested"
+
+
+client.run()
+client.conn()
