@@ -1,5 +1,20 @@
 {
-  "monkey": "@('_')@",
-  "sleeping": "(-.-)Zzz...",
-  "rose": "--------{---(@"
+  "files": [
+    {
+      "name": "To Kill A Mockingbird"
+    },
+    {
+      "name": "Hollywood Shuffle"
+    },
+    {
+      "name": "Over the Hill to the Poorhouse"
+    },
+    {
+      "name": "Wilson"
+    },
+    {
+      "name": "20,000 Leagues Under the Sea"
+    }
+  ]
 }
+

@@ -37,9 +37,7 @@ class Client(Flask):
         self.sesskeys.append(generate_bytes(16))
         self.sesskeys.append(generate_bytes(16))
         cid = generate_bytes(16)
-        tracker_payload = {
-                            "files": json.dumps(self.fl)
-                           }
+        tracker_payload = self.fl
 
         payloadZ = {
                     "aes_key": self.sesskeys[2].hex(),
@@ -69,6 +67,7 @@ class Client(Flask):
     def request_file(self, file_name):
         """Asks for the file to the tracker
         """
+        print("Request the file: ", file_name)
         pass
 
     def client_loop(self):
@@ -91,7 +90,8 @@ client = Client(__name__, args.lof.read())
 @client.route("/", methods=['GET'])
 def index():
     # Serve HTML page with input to request file
-    return render_template("index.html")
+    # Make a request for the available files to download, for now just passing a the same files of the clinet
+    return render_template("index.html", data=client.fl)
 
 
 @client.route("/", methods=['POST'])
@@ -103,12 +103,13 @@ def main_handler():
     pass
 
 
-@client.route("/request", methods=['POST'])
-def request():
+@client.route("/request/<file_name>", methods=['POST'])
+def request(file_name):
     # Get filename wanted
-    # Send request to trackere
-    print(request)
-    return "File requested"
+    file_name = file_name or ""
+    print("Request File: ", file_name)
+    client.request_file(file_name)
+    return (''), 204
 
 
 client.run()
