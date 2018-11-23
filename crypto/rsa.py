@@ -1,7 +1,18 @@
 from random import SystemRandom # cryptographically secure RNG
-from math import gcd
+from math import gcd, sqrt
 
 random_gen = SystemRandom()
+
+# Size in bits of a key number
+key_width = 1024
+
+# Maximum size of a message in bytes. This ensures that the number represented
+# by the message is less than the modulus of the key
+max_message_length = (key_width // 8) - 1
+
+# Public exponant, we fix it and search for p and q such that gcd(e, lambda_n) == 1
+# This value is a common one found online.
+e = 65537
 
 class RSAPublicKey:
     """Holds a public key for RSA encryption. This consists in two different
@@ -21,12 +32,11 @@ class RSAPrivateKey:
         self.n = n
         self.d = d
 
-def generate_rsa(key_width):
+def generate_rsa():
     """Generates private and public RSA keys. Use the public one for
     encrypting data (with the function rsa_encrypt) and the private one to
     decrypt messages (with the function rsa_decrypt).
     """
-    e = 65537
     while True:
         # TODO Understand RSA
         p = random_prime(key_width // 2)
@@ -38,25 +48,49 @@ def generate_rsa(key_width):
             return RSAPublicKey(n, e), RSAPrivateKey(n, d)
 
 def rsa_encrypt(plain_text, public_key):
-    """Encrypts a message. The message has to be of type int (you can convert
-    bytes to create an int value however you want) and have a bit width less
-    than the key. Therefore, this is suited to encrypt small messages at once.
+    """Encrypts a message. The message has to be of type bytes and have a
+    length less than max_message_length (to ensure mathematical correctness).
+    Therefore, this is suited to encrypt small messages at once. If the message
+    is not long enough, it is padded automatically.
+
     Parameters:
-        plain_text: the message as an int, with plain_text.bit_length() <= key_width
+        plain_text: the message as a bytes object, with len(plain_text) < max_message_length
+
         public_key: the public key, created by generate_rsa.
     Returns:
-        Another integer, the cipher text.
+        An int object, the cipher text.
     """
+    assert type(plain_text) == bytes, "plain_text must be of type bytes"
+    assert len(plain_text) <= max_message_length, "plain_text must be at most max_message_length bytes long"
+    assert type(public_key) == RSAPublicKey, "public_key must be of type RSAPublicKey"
+
+    # Convert plain_text to number
+    # TODO use more secure padding
+    plain_text = int.from_bytes(plain_text, byteorder="big")
+
+    # Encrypt the message
     return exp_mod(plain_text, public_key.e, public_key.n)
 
 def rsa_decrypt(cipher_text, private_key):
-    """Decrypts a message. This is teh reverse process of rsa_encrypt.
-        cipher_text: the cipher text as an int
+    """Decrypts a message. This is the reverse process of rsa_encrypt. The
+    result is padded with zero bytes on the left, to make it max_message_length
+    bytes long.
+
+    Parameters
+        cipher_text: the cipher text as int object
         public_key: the public key, created by generate_rsa.
     Returns:
-        The original message as when it was given to rsa_encrypt, as as int.
+        The original message as when it was given to rsa_encrypt, as as bytes
+        object, padded with zero bytes.
     """
-    return exp_mod(cipher_text, private_key.d, private_key.n)
+    assert type(cipher_text) == int, "cipher_text must be of type int"
+    assert cipher_text < private_key.n, "cipher_text must less than the modulus of the key"
+    assert type(private_key) == RSAPrivateKey, "private_key must be of type RSAPrivateKey"
+
+    # Decrypt the message
+    res = exp_mod(cipher_text, private_key.d, private_key.n)
+    # Convert the result back to bytes
+    return res.to_bytes(max_message_length, byteorder="big")
 
 def mod_inverse(a, b):
     """Calculates the inverse of a in a ring of modulus b. That is,
@@ -96,9 +130,11 @@ def random_prime(width):
     """Generate a random number which has a high probability of being
     a prime number, and has a bit length of at most width.
     """
+    # We define a maximum and a minimum to pick the number, to ensure that
+    # the product of two of these random primes has always at least width * 2
+    # bits.
     max = (1 << width) - 1 # Equals 2^width - 1, all bit sets
-    # TODO check the formula for min below
-    min = 6074001000 << (width - 33) if width > 33 else int(sqrt(max))
+    min = int(sqrt(2) * (1 << (width - 1))) # Equals sqrt(2) * 2^(width - 1)
     while True:
         res = random_gen.randint(min, max)
         if is_probably_prime(res):
@@ -120,12 +156,3 @@ def exp_mod(a, e, b):
         if e & (1 << i):
             product *= power_of_a
     return product % b
-
-if __name__ == "__main__":
-    pub, priv = generate_rsa(1024)
-    message = 424242
-    print(message)
-    cipher_text = rsa_encrypt(message, pub)
-    print(cipher_text)
-    plain_text = rsa_decrypt(cipher_text, priv)
-    print(plain_text)

@@ -191,11 +191,11 @@ FSID.
 
 ## Downstream File Sharing Table
 This table is filled when a node is going to receive a file coming from  another
-node through a bridge. The DownCID is one of the downstream connection that the
+node through a bridge. The DownCID is one of the downstream connections that the
 node has already, and BridgeCID is the CID that the node at the other side of
-the bridge is used to connect to this node (CID9 in the image below). To get
-the correct downstream ID and SessKey, the Relay Table should be indexed with
-DownCID.
+the bridge is using to connect to this node (CID9 in the image below). To get
+the correct downstream ID and SessKey to forward a file message, the Relay Table
+should be indexed with DownCID.
 
 | DownCID | BridgeCID |
 | ----- | ---- |
@@ -320,6 +320,7 @@ to be properly redirected to Y1 and ultimately to C1. This control message is
 ```
 
 The Downstream File Sharing Table is now
+
 | DownCID | BridgeCID |
 | ----- | ---- |
 | `<CID3>` | `<CID9>` |
