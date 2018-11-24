@@ -24,6 +24,8 @@ for node in node_pool:
     public_keys[node] = pub
     private_keys[node] = priv
 
+cid_size = 16
+
 # node_pool = [
 #     "localhost"
 # ]
