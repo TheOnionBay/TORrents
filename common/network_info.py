@@ -1,3 +1,5 @@
+import json
+
 tracker = "192.168.0.7"
 
 node_pool = [
@@ -14,15 +16,10 @@ node_pool = [
     "192.168.0.20",
 ]
 
-# Generate the RSA key for all the nodes
 # For now private keys are stored here, we should decide how to create them
 # and make the public keys available to the client
-public_keys = {}
-private_keys = {}
-for node in node_pool:
-    pub, priv = generate_rsa()
-    public_keys[node] = pub
-    private_keys[node] = priv
+public_keys = json.load(open("common/public_keys.json"))
+private_keys = json.load(open("common/private_keys.json"))
 
 cid_size = 16
 
