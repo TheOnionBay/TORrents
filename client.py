@@ -6,8 +6,11 @@ import argparse
 from flask import Flask, render_template
 from random import sample
 from crypto.random_bytes import generate_bytes
+from crypto.aes_encrypt import encrypt as aes_encrypt
+from crypto.aes_decrypt import decrypt as aes_decrypt
+from rsa import rsa_encrypt, rsa_decrypt
 
-from common.network_info import tracker, node_pool
+from common.network_info import tracker, node_pool, public_keys
 
 
 class Client(Flask):
@@ -40,27 +43,30 @@ class Client(Flask):
         tracker_payload = self.fl
 
         payloadZ = {
-                    "aes_key": self.sesskeys[2].hex(),
-                    "to": tracker,
-                    "relay": bytes(json.dumps(tracker_payload), 'ascii').hex()
-                    }
+            "to": tracker,
+            "relay": tracker_payload
+        }
 
         payloadY = {
-                    "aes_key": self.sesskeys[1].hex(),
-                    "to": self.tunnel_nodes[2],
-                    "relay": bytes(json.dumps(payloadZ), 'ascii').hex()
-                    }
+            "to": self.tunnel_nodes[2],
+            # Encrypt the AES session key for Z with RSA, it will be copied by
+            # the node
+            "aes_key": rsa_encrypt(self.sesskeys[2], public_keys[self.tunnel_nodes[2]]).hex(),
+            # Encrypt the payload for Z with the AES session key
+            "relay": aes_encrypt(bytes(json.dumps(payloadZ), 'ascii'), self.sesskeys[2]).hex()
+        }
 
         payloadX = {
-                   "aes_key": self.sesskeys[0].hex(),
-                   "to": self.tunnel_nodes[1],
-                   "relay": bytes(json.dumps(payloadY), 'ascii').hex()
-                   }
+            "to": self.tunnel_nodes[1],
+            "aes_key": rsa_encrypt(self.sesskeys[1], public_keys[self.tunnel_nodes[1]]).hex(),
+            "relay": aes_encrypt(bytes(json.dumps(payloadY), 'ascii'), self.sesskeys[1]).hex()
+        }
 
         message = {
-                   "CID": cid.hex(),
-                   "payload": bytes(json.dumps(payloadX), 'ascii').hex()
-                   }
+            "CID": cid.hex(),
+            "aes_key": rsa_encrypt(self.sesskeys[0], public_keys[self.tunnel_nodes[0]]).hex(),
+            "payload": aes_encrypt(bytes(json.dumps(payloadX), 'ascii'), self.sesskeys[0]).hex()
+        }
 
         r = requests.post("http://" + self.tunnel_nodes[0], data=message)
 
