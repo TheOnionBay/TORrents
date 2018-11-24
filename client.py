@@ -17,15 +17,7 @@ class Client(Flask):
 
     def __init__(self, name, filenames):
         super().__init__(name, template_folder=os.path.abspath('client/templates'))
-        self.fl = self.file_list(filenames)
-        self.tunnel_nodes = self.select_nodes(node_pool)
-        self.sesskeys = []
-
-    def file_list(self, file):
-        """Parses the JSON document containing the list of files for this
-        client
-        """
-        return json.loads(file)
+        self.file_list = json.loads(file)
 
     def select_nodes(self, node_pool):
         """Selects 3 public nodes from the available pool
@@ -36,17 +28,18 @@ class Client(Flask):
         """Connect to the torrent network, uploading the list of files this
         client has.
         """
-        self.sesskeys.append(generate_bytes(16))
-        self.sesskeys.append(generate_bytes(16))
-        self.sesskeys.append(generate_bytes(16))
-        cid = generate_bytes(16)
+        self.tunnel_nodes = self.select_nodes(node_pool)
+        self.sesskeys = [generate_bytes(16) for _ in self.tunnel_nodes]
+        self.cid = generate_bytes(16).hex()
+
         tracker_payload = {
             "type": "ls",
-            "files": self.fl
+            "files": self.file_list
         }
 
         payloadZ = {
             "to": tracker,
+            # The payload is plaintext between Z and the tracker
             "relay": tracker_payload
         }
 
@@ -66,9 +59,26 @@ class Client(Flask):
         }
 
         message = {
-            "CID": cid.hex(),
+            "CID": self.cid,
             "aes_key": rsa_encrypt(self.sesskeys[0], public_keys[self.tunnel_nodes[0]]).hex(),
             "payload": aes_encrypt(bytes(json.dumps(payloadX), 'ascii'), self.sesskeys[0]).hex()
+        }
+
+        r = requests.post("http://" + self.tunnel_nodes[0], data=message)
+
+    def send_payload(self, payload):
+        """Encrypts three times a message and send it to the tunnel.
+        The tunnel has to be established beforehand.
+        """
+        payload = bytes(json.dumps(payload), 'ascii')
+
+        # Encrypt in the reverse order, the closest node (first in the list) decrypts first
+        for node, sesskey in reversed(zip(self.tunnel_nodes, self.sesskeys)):
+            payload = aes_encrypt(payload, sesskey)
+
+        message = {
+            "CID": self.cid,
+            "payload": payload.hex()
         }
 
         r = requests.post("http://" + self.tunnel_nodes[0], data=message)
@@ -78,10 +88,12 @@ class Client(Flask):
         super().run()
 
     def request_file(self, file_name):
-        """Asks for the file to the tracker
-        """
-        print("Request the file: ", file_name)
-        pass
+        """Asks for the file to the tracker."""
+        tracker_payload = {
+            "type": "request",
+            "file": file_name
+        }
+        send_payload(tracker_payload)
 
     def client_loop(self):
         """This function makes the client interactive and puts the terminal in
@@ -104,7 +116,7 @@ client = Client(__name__, args.lof.read())
 def index():
     # Serve HTML page with input to request file
     # Make a request for the available files to download, for now just passing a the same files of the clinet
-    return render_template("index.html", data=client.fl)
+    return render_template("index.html", data=client.file_list)
 
 
 @client.route("/", methods=['POST'])
