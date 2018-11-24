@@ -40,7 +40,10 @@ class Client(Flask):
         self.sesskeys.append(generate_bytes(16))
         self.sesskeys.append(generate_bytes(16))
         cid = generate_bytes(16)
-        tracker_payload = self.fl
+        tracker_payload = {
+            "type": "ls",
+            "files": self.fl
+        }
 
         payloadZ = {
             "to": tracker,

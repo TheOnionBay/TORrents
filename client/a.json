@@ -1,20 +1,17 @@
-{
-  "files": [
-    {
-      "name": "Slam"
-    },
-    {
-      "name": "Mississippi Mermaid"
-    },
-    {
-      "name": "Pirates"
-    },
-    {
-      "name": "Duel in the Sun"
-    },
-    {
-      "name": "Tom Jones"
-    }
-  ]
-}
-
+[
+  {
+    "name": "Slam"
+  },
+  {
+    "name": "Mississippi Mermaid"
+  },
+  {
+    "name": "Pirates"
+  },
+  {
+    "name": "Duel in the Sun"
+  },
+  {
+    "name": "Tom Jones"
+  }
+]
