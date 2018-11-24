@@ -23,15 +23,15 @@ class Node(Flask):
             self.transmit_to_bridge(message)
 
         # If the message is received from a bridge, and to be transmitted down to the client
-        else if message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
+        elif message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
             self.receive_from_bridge(message)
 
         # If the message is a normal message from down to upstream
-        else if message["CID"] in self.relay.indices["DownCID"]:
+        elif message["CID"] in self.relay.indices["DownCID"]:
             self.forward_upstream(message)
 
         # If the message is a response from up to downstream
-        else if message["CID"] in self.relay.indices["UpCID"]:
+        elif message["CID"] in self.relay.indices["UpCID"]:
             self.forward_downstream(message)
 
         # We don't know the CID of the message, we assume it contains an AES key
