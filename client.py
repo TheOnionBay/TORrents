@@ -8,7 +8,7 @@ from random import sample
 from crypto.random_bytes import generate_bytes
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
-from rsa import rsa_encrypt, rsa_decrypt
+from crypto.rsa import rsa_encrypt, rsa_decrypt
 
 from common.network_info import tracker, node_pool, public_keys
 
@@ -17,7 +17,7 @@ class Client(Flask):
 
     def __init__(self, name, filenames):
         super().__init__(name, template_folder=os.path.abspath('client/templates'))
-        self.file_list = json.loads(file)
+        self.file_list = json.loads(filenames)
 
     def select_nodes(self, node_pool):
         """Selects 3 public nodes from the available pool

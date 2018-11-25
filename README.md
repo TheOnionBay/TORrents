@@ -8,6 +8,14 @@ Install pipenv and python3, then:
 pipenv install
 ```
 
+## Unit Test
+To run all unit test in the crypto package (the only one to be unit-tested so far),
+run the command
+
+```
+python -m unittest discover -s crypto/
+```
+
 ## Usage
 
 The three entrypoints to the application are `tracker.py`, `client.py` and `node.py`.
