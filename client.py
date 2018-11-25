@@ -5,20 +5,22 @@ import json
 import argparse
 from flask import Flask, render_template
 from random import sample
+
+from crypto.rsa import rsa_encrypt, rsa_decrypt
 from crypto.random_bytes import generate_bytes
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
-from rsa import rsa_encrypt
 from common.network_info import tracker, node_pool, public_keys, cid_size
 from common.encoding import json_to_bytes, bytes_to_json
+
 
 
 class Client(Flask):
 
     def __init__(self, name, filenames):
         super().__init__(name, template_folder=os.path.abspath('client/templates'))
-        self.file_list = json.loads(file)
+        self.file_list = json.loads(filenames)
 
     def select_nodes(self, node_pool):
         """Selects 3 public nodes from the available pool

@@ -1,6 +1,6 @@
 import unittest
-import aes_decrypt
-import aes_common
+from . import aes_decrypt
+from . import aes_common
 
 class TestAesDecrypt(unittest.TestCase):
     def test_inv_mix_columns(self):

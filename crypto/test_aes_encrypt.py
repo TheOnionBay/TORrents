@@ -1,8 +1,8 @@
 import unittest
-import aes_encrypt
-import aes_decrypt
-import aes_common
-from random_bytes import generate_bytes
+from . import aes_encrypt
+from . import aes_decrypt
+from . import aes_common
+from .random_bytes import generate_bytes
 
 class TestAesEncrypt(unittest.TestCase):
     def test_encrypt_then_decrypt(self):

@@ -6,6 +6,9 @@ random_gen = SystemRandom()
 # Size in bits of a key number
 key_width = 1024
 
+# Size of a ciphertext message
+cipher_text_length = key_width // 8
+
 # Maximum size of a message in bytes. This ensures that the number represented
 # by the message is less than the modulus of the key
 max_message_length = (key_width // 8) - 1
@@ -66,10 +69,10 @@ def rsa_encrypt(plain_text, public_key):
 
     # Convert plain_text to number
     # TODO use more secure padding
-    plain_text = int.from_bytes(plain_text, byteorder="big")
+    plain_text = int.from_bytes(plain_text, byteorder="big", signed=False)
 
     # Encrypt the message
-    return exp_mod(plain_text, public_key.e, public_key.n)
+    return exp_mod(plain_text, public_key.e, public_key.n).to_bytes(cipher_text_length, byteorder="big", signed=False)
 
 def rsa_decrypt(cipher_text, private_key):
     """Decrypts a message. This is the reverse process of rsa_encrypt. The
@@ -83,14 +86,20 @@ def rsa_decrypt(cipher_text, private_key):
         The original message as when it was given to rsa_encrypt, as as bytes
         object, padded with zero bytes.
     """
-    assert type(cipher_text) == int, "cipher_text must be of type int"
-    assert cipher_text < private_key.n, "cipher_text must less than the modulus of the key"
+    assert type(cipher_text) == bytes, "cipher_text must be of type bytes"
+    assert len(cipher_text) == cipher_text_length, "cipher_text must be cipher_text_length bytes long"
     assert type(private_key) == RSAPrivateKey, "private_key must be of type RSAPrivateKey"
+
+    # Convert bytes to int
+    cipher_text = int.from_bytes(cipher_text, byteorder="big", signed=False)
+
+    assert cipher_text < private_key.n, "the value of the cipher_text must be less than the modulus of the key"
 
     # Decrypt the message
     res = exp_mod(cipher_text, private_key.d, private_key.n)
+
     # Convert the result back to bytes
-    return res.to_bytes(max_message_length, byteorder="big")
+    return res.to_bytes(max_message_length, byteorder="big", signed=False)
 
 def mod_inverse(a, b):
     """Calculates the inverse of a in a ring of modulus b. That is,
