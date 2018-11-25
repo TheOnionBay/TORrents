@@ -1,4 +1,4 @@
-from aes_common import *
+from .aes_common import *
 from collections import deque
 
 def decrypt(cipher_text, key):

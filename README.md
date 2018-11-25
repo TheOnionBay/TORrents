@@ -8,6 +8,13 @@ Install pipenv and python3, then:
 pipenv install
 ```
 
+## Unit Test
+To run all unit test in the, run the command
+
+```
+python -m unittest discover
+```
+
 ## Usage
 
 The three entrypoints to the application are `tracker.py`, `client.py` and `node.py`.

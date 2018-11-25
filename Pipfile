@@ -8,3 +8,4 @@ url = "https://pypi.org/simple"
 [packages]
 flask = "*"
 requests = "*"
+midict = "*"

@@ -1,6 +1,6 @@
 import unittest
-import rsa
-from random_bytes import generate_bytes
+from . import rsa
+from .random_bytes import generate_bytes
 
 class TestRsa(unittest.TestCase):
     def test_encrypt_then_decrypt(self):
