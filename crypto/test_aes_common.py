@@ -1,8 +1,8 @@
 import unittest
-from crypto import aes_encrypt
-from crypto import aes_decrypt
-from crypto import aes_common
-from crypto.random_bytes import generate_bytes
+from . import aes_encrypt
+from . import aes_decrypt
+from . import aes_common
+from .random_bytes import generate_bytes
 
 class TestAesCommon(unittest.TestCase):
     def test_expand_key(self):

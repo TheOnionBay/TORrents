@@ -7,8 +7,8 @@ list of byte values. The message has to be of type bytes, and the key as well,
 and the key has to be 16 bytes long.
 """
 from collections import deque
-from crypto.aes_common import *
-from crypto.random_bytes import generate_bytes
+from .aes_common import *
+from .random_bytes import generate_bytes
 
 def encrypt(plain_text, key):
     assert type(plain_text) == bytes, "plain_text must be of type bytes"

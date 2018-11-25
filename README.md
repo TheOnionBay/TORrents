@@ -9,11 +9,10 @@ pipenv install
 ```
 
 ## Unit Test
-To run all unit test in the crypto package (the only one to be unit-tested so far),
-run the command
+To run all unit test in the, run the command
 
 ```
-python -m unittest discover -s crypto/
+python -m unittest discover
 ```
 
 ## Usage
