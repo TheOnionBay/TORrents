@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+
+      <title>TheOnionBay</title>
+      <meta name="description" content="TheOnionBay tracker">
+      <meta name="author" content="TheOnionBay">
+
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+   </head>
+
+   <body>
+      <div class="container">
+         <div class="row">
+            <h1>TheOnionBay</h1>
+         </div>
+         <div class="row">
+            <h4>List of files in the network</h4>
+            <ul class="collection">
+               {% for file in data["file_list"] %}
+               <li class="collection-item">{{ file }}</li>
+               {% endfor %}
+            </ul>
+         </div>
+         <div class="row">
+            <h4>Peers</h4>
+            <table class="striped responsive-table">
+               <thead>
+                  <th>CID</th>
+                  <th>IP</th>
+               </thead>
+               <tbody>
+                  {% for cid, ip in data["peers"].items() %}
+                  <tr>
+                     <td>{{cid}}</td>
+                     <td>{{ip}}</td>
+                  </tr>
+                  {% endfor %}
+               </tbody>
+            </table>
+         </div>
+
+      </div>
+
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+   </body>
+</html>
