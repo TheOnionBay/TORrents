@@ -1,5 +1,3 @@
-
-import os
 import requests
 import json
 import argparse
@@ -13,7 +11,7 @@ from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size
 from common.encoding import json_to_bytes, bytes_to_json
-
+import os
 
 
 class Client(Flask):
@@ -96,7 +94,7 @@ class Client(Flask):
             "type": "request",
             "file": file_name
         }
-        send_payload(tracker_payload)
+        self.send_payload(tracker_payload)
 
     def client_loop(self):
         """This function makes the client interactive and puts the terminal in
