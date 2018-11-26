@@ -3,7 +3,7 @@ from flask import jsonify
 app = Flask(__name__)
 
 files = ["titanic", "Harry Potter", "Resident Evil", "MatLab"]
-@app.route("/")
+@app.route("/", methods=['POST'])
 def index():
     # Process list of files a client has
     return jsonify(files)

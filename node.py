@@ -18,14 +18,13 @@ class Node(Flask):
     def __init__(self, name, ip, port):
         super().__init__(name)
         self.private_key = private_keys[ip]
-        # The order of the
+        self.port = port
         self.relay = MIDict([], ["DownIP", "DownCID", "SessKey", "UpIP", "UpCID"])
         self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
         self.down_file_transfer = MIDict([], ["BridgeCID", "DownCID"])
 
     def run(self):
-        # self.conn()
-        super().run()
+        super().run(port=self.port)
 
     def handle_message(self, message):
         # If the message is a file to be transmitted to a bridge
@@ -135,14 +134,16 @@ class Node(Flask):
 
 
 parser = argparse.ArgumentParser(description='TORrent node')
-parser.add_argument('port', type=int, help='node port')
+# We need the IP of the node so that it can find its own private RSA key in
+# common/network_info.py
+parser.add_argument('ip', type=str, help='ip address of the node')
+parser.add_argument('port', type=int, nargs='?', default=5000, help='port number of the node')
 args = parser.parse_args()
 
-# TODO insert the true IP address of the node here
-node = Node(__name__, "192.168.0.10", args.port)
+node = Node(__name__, args.ip, args.port)
 
 
-@node.route("/")
+@node.route("/", methods=['POST'])
 def index():
     message = request.get_json()
     node.handle_message(message)
