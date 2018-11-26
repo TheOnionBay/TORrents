@@ -18,25 +18,9 @@ function handle_message(message):
 		}
 		send(new_message, bridge_ip)
 
-	# If the message is a control message
-	else if message["cid"] == "control":
-		# If we initiate a bridge
-		if message["type"] == "make_bridge":
-			up_file_transfer.add(
-				BridgeCID = message["bridge_CID"],
-			    BridgeIP = message["to"],
-			    FSID = message["FSID"]
-			)
-
-		# If we are at the end of a new bridge
-		else if message["type"] == "receive_bridge":
-			# TODO this tracker_CID field is not in the doc yet
-			down_cid = relay.lookup(UpCID = message["tracker_CID"])
-			down_file_transfer.add(DownCID = down_cid, BridgeCID = message["bridge_CID"])
-
 	# If the message is received from a bridge, and to be transmitted down to the client
-	else if message["cid"] in down_file_transfer.BridgeCID:
-		down_cid = down_file_transfer.lookup(BridgeCID = message["cid"])
+	else if message["CID"] in down_file_transfer.BridgeCID:
+		down_cid = down_file_transfer.lookup(BridgeCID = message["CID"])
 		down_ip, sess_key = relay.lookup(DownCID = down_cid)
 		new_message = {
 			"CID" : down_cid,
@@ -45,35 +29,59 @@ function handle_message(message):
 		send(new_message, down_ip)
 
 	# If the message is a normal message from down to upstream
-	else if message["cid"] in relay.DownCID:
-		up_cid, up_ip, sess_key = relay.lookup(DownCID = message["cid"])
-		payload = aes_decrypt(message["payload"], sess_key)
-
-		# If we don't know where to forward the message upstream, that means
-		# we are extending the tunnel, and we should find the destination in
-		# the payload and create a upstream CID
-		if up_cid and up_ip is not in the table:
-			up_cid = create_cid()
-			up_ip = payload["to"]
-			# The actual payload for the next node is in the field "relay", see the document
-			payload = payload["relay"]
-
+	else if message["CID"] in relay.DownCID:
+		up_cid, up_ip, sess_key = relay.lookup(DownCID = message["CID"])
 		new_message = {
 			"CID": up_cid,
-			"payload" :
+			"payload" : aes_decrypt(message["payload"], sess_key)
 		}
 		send(new_message, up_ip)
 
 	# If the message is a response from up to downstream
-	else if message["cid"] in relay.UpCID:
-		down_cid, down_ip, sess_key = relay.lookup(UpCID = message["cid"])
+	else if message["CID"] in relay.UpCID:
+		down_cid, down_ip, sess_key = relay.lookup(UpCID = message["CID"])
 		new_message = {
 			"CID": down_cid,
 			"payload": aes_encrypt(message["payload"], sess_key)
 		}
 		send(new_message, down_ip)
 
-	# We don't know the CID of the message, we assume this is a AES key
+	# We don't know the CID of the message, we assume this is a tunnel creation
 	else:
-		sess_key = rsa_decrypt(message["payload"], rsa_priv_key)
-		relay.add(DownCID = message["CID"], DownIP = message.IP, sess_key = sess_key)
+		# Decrypt the session key
+		sess_key = rsa_decrypt(message["aes_key"], rsa_priv_key)
+		# Decrypt the payload with the session key
+		payload = aes_decrypt(message["payload"], sess_key)
+		# Interpret the payload as a JSON object
+		payload = string_to_json(payload)
+		# Create a CID for the new upstream link
+		up_cid = create_cid()
+		# Add the tunnel data to the relay table
+		relay.add(
+			DownCID = message["CID"],
+			DownIP = message.IP,
+			sess_key = sess_key,
+			UpCID = up_cid,
+			UpIP = payload["to"]
+		)
+		# Forward the message to the next node
+		new_message = {
+			"CID": up_cid,
+			"aes_key": payload["aes_key"],
+			"payload": payload["relay"]
+		}
+		send(new_message, payload["to"])
+
+def handle_control_message(message):
+	# If we initiate a bridge
+	if message["type"] == "make_bridge":
+		up_file_transfer.add(
+			BridgeCID = message["bridge_CID"],
+		    BridgeIP = message["to"],
+		    FSID = message["FSID"]
+		)
+
+	# If we are at the end of a new bridge
+	else if message["type"] == "receive_bridge":
+		down_cid = relay.lookup(UpCID = message["CID"])
+		down_file_transfer.add(DownCID = down_cid, BridgeCID = message["bridge_CID"])
