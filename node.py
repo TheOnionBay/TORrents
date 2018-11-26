@@ -18,14 +18,13 @@ class Node(Flask):
     def __init__(self, name, ip, port):
         super().__init__(name)
         self.private_key = private_keys[ip]
-        # The order of the
+        self.port = port
         self.relay = MIDict([], ["DownIP", "DownCID", "SessKey", "UpIP", "UpCID"])
         self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
         self.down_file_transfer = MIDict([], ["BridgeCID", "DownCID"])
 
     def run(self):
-        # self.conn()
-        super().run()
+        super().run(port=self.port)
 
     def handle_message(self, message):
         # If the message is a file to be transmitted to a bridge
