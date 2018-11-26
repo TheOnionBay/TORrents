@@ -141,7 +141,7 @@ args = parser.parse_args()
 node = Node(__name__, "192.168.0.10", args.port)
 
 
-@node.route("/")
+@node.route("/", methods=['POST'])
 def index():
     message = request.get_json()
     node.handle_message(message)
