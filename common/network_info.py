@@ -2,21 +2,31 @@ import json
 from crypto import rsa
 import os
 
-tracker = "127.0.0.1:5020" if os.environ['DEV'] == 'True' else "192.168.0.7"
+tracker = "192.168.0.7:5000"
 
 node_pool = [
-    "127.0.0.1:5001" if os.environ['DEV'] == 'True' else"192.168.0.10",
-    "127.0.0.1:5002" if os.environ['DEV'] == 'True' else"192.168.0.11",
-    "127.0.0.1:5003" if os.environ['DEV'] == 'True' else"192.168.0.12",
-    "127.0.0.1:5004" if os.environ['DEV'] == 'True' else"192.168.0.13",
-    "127.0.0.1:5005" if os.environ['DEV'] == 'True' else"192.168.0.14",
-    "127.0.0.1:5006" if os.environ['DEV'] == 'True' else"192.168.0.15",
-    "127.0.0.1:5007" if os.environ['DEV'] == 'True' else"192.168.0.16",
-    "127.0.0.1:5008" if os.environ['DEV'] == 'True' else"192.168.0.17",
-    "127.0.0.1:5009" if os.environ['DEV'] == 'True' else"192.168.0.18",
-    "127.0.0.1:5010" if os.environ['DEV'] == 'True' else"192.168.0.19",
-    "127.0.0.1:5011" if os.environ['DEV'] == 'True' else"192.168.0.20",
+    "192.168.0.10:5000",
+    "192.168.0.11:5000",
+    "192.168.0.12:5000",
+    "192.168.0.13:5000",
+    "192.168.0.14:5000",
+    "192.168.0.15:5000",
+    "192.168.0.16:5000",
+    "192.168.0.17:5000",
+    "192.168.0.18:5000",
+    "192.168.0.19:5000",
+    "192.168.0.20:5000",
 ]
+
+if os.environ["DEV"] == "True":
+    # Set tracker IP/port
+    tracker = "127.0.0.1:5020"
+    # Set nodes IP/port
+    dev_node_ip = "127.0.0.1"
+    dev_node_start_port = 5001
+    for i in range(len(node_pool)):
+        node_pool[i] = dev_node_ip + ":" + str(dev_node_start_port + i)
+
 
 # For now private keys are stored here, we should decide how to create them
 # and make the public keys available to the client

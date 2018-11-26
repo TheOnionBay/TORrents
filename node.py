@@ -134,11 +134,13 @@ class Node(Flask):
 
 
 parser = argparse.ArgumentParser(description='TORrent node')
-parser.add_argument('port', type=int, help='node port')
+# We need the IP of the node so that it can find its own private RSA key in
+# common/network_info.py
+parser.add_argument('ip', type=str, help='ip address of the node')
+parser.add_argument('port', type=int, nargs='?', default=5000, help='port number of the node')
 args = parser.parse_args()
 
-# TODO insert the true IP address of the node here
-node = Node(__name__, "192.168.0.10", args.port)
+node = Node(__name__, args.ip, args.port)
 
 
 @node.route("/", methods=['POST'])
