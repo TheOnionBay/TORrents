@@ -24,7 +24,7 @@ class Node(Flask):
         self.down_file_transfer = MIDict([], ["BridgeCID", "DownCID"])
 
     def run(self):
-        super().run(port=self.port)
+        super().run(port=self.port, host='0.0.0.0')
 
     def handle_message(self, message):
         # If the message is a file to be transmitted to a bridge

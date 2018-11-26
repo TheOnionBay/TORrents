@@ -82,11 +82,11 @@ class Client(Flask):
             "payload": payload.hex()
         }
 
-        r = requests.post("http://" + self.tunnel_nodes[0], data=message)
+        r = requests.post(self.tunnel_nodes[0], data=message)
 
     def run(self):
         self.conn()
-        super().run()
+        super().run(host='0.0.0.0')
 
     def request_file(self, file_name):
         """Asks for the file to the tracker."""
