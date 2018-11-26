@@ -22,22 +22,22 @@ function handle_message(message):
 
 			# Send a message to the node at the start of the bridge
 			make_bridge_message = {
-				"CID": "control",
 			    "type": "make_bridge",
 			    "bridge_CID": bridge_cid,
 			    "to": message.IP,
 			    "FSID": fsid
 			}
-			send(make_bridge_message, owning_client_IP)
+			# Send on the control channel of the node
+			send(make_bridge_message, owning_client_IP + "control/")
 
 			# Send a message to the node at the end of the bridge
 			receive_bridge_message = {
-			    "CID": "control",
-				"tracker_CID": message["CID"], # TODO this tracker_CID field is not in the doc yet
+			    "CID": message["CID"],
 			    "type": "receive_bridge",
 			    "bridge_CID": bridge_cid
 			}
-			send(receive_bridge_message, message.IP)
+			# Send on the control channel of the node
+			send(receive_bridge_message, message.IP + "control/")
 
 			# Send a message to the client, asking he/she to send the file
 			request_message = {

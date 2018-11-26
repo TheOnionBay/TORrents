@@ -3,6 +3,7 @@ from flask import Flask, render_template
 from flask import jsonify
 from common.network_info import *
 
+
 app = Flask(__name__, template_folder=os.path.abspath('tracker/templates'))
 
 files = {"movie1": "cid1",
@@ -28,6 +29,7 @@ def index2():
     return "is this route necessary ?"
 
 @app.route("/", methods=['GET'])
+
 def index():
     # Process list of files a client has
     return render_template("index.html",
@@ -50,4 +52,4 @@ def request():
     pass
 
 
-app.run()
+app.run(host='0.0.0.0')

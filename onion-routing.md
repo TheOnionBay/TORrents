@@ -17,115 +17,83 @@ towards the client, respectively.
 
 # Onion Rounting
 
-## Starting the tunnel
+## Creating the tunnel
 
 A peer A selects three nodes X, Y, Z among those in the node pool and starts by
-building a circuit. A sends a message to X. X gets the following POST HTTP
-message:
+building a circuit. For that, A will send a message that will create the whole
+circuit at once. Broadly speaking, the message is sent to X, but it contains a payload
+that is forwarded to Y, and subsequently another payload is forwarded to Z.
+
+The message is sent by POST HTTP, and is as follow:
 
 ```json
 {
     "CID": "35ce8f75-6b57-4824-8597-dd756c75a9c5",
+    "aes_key": "<encrypted AES key for X>",
     "payload": "<encrypted data>"
 }
 ```
 
 where CID stands for CircuitID and is a randomly generated UUIDv4 (it is
-globally unique). Since X has not seen this CID before, it will decrypt the
-payload with its private key, assuming the payload is the encrypted session key
-that will be used in future communications with this CircuitID.  Once it has
-this, the request handler returns HTTP code 200 to say OK.
-
-The CircuitID (CID) will identify this link (the edge from A to X), and the node
-can already put together 3 related elements:
-
-`<DownIP, DownCID, SessKey>`
-
-Where `DownIP` is the IP address of A, `DownCID` is
-`35ce8f75-6b57-4824-8597-dd756c75a9c5`, and `SessKey` is the symmetric key.
-
-The symmetric key that's asymmetrically encrypted in the payload is a 128-bit
-key such as:
-
-`62E45FA2AA90DA900007FE59C88FDAEC`
-
-This key can be generated in Python easily.
+globally unique). The field `aes_key` is the session key (16 bytes, for example
+`62E45FA2AA90DA900007FE59C88FDAEC`) that is shared between A and X, encrypted
+with RSA, so that only X can decrypt it (once encrypted with RSA, the key is 128
+bytes long). The field `payload` is encrypted with the AES key, and contains the
+data for extending the tunnel.
 
 Instead of a key, we could very well send key material (a seed) so the node
 generates the key on its own with a key derivation function. It's basically the
 same, so we will send the key directly to simplify things.
 
-At this point we have done a simplified version of TLS, in which we used public
-key cryptography to exchange a symmetric key.
-
-## Extending the tunnel
-
-Client A then sends the following message to node X, encrypting the payload with
-the previously shared session key:
-
-```json
-{
-    "CID": "35ce8f75-6b57-4824-8597-dd756c75a9c5", <-- CID for link A - X
-    "payload": "<encrypted data>"
-}
-```
-
-Now, node X knows about this CID and does the usual relay operation. 2
-possibilities here: node X does have an outbound CID and IP for the received CID
-OR not. If it does have an outbound CID and IP, simply decrypt payload, and
-build a new message such as:
-
-```json
-{
-    "CID": "<outbound CID>",
-    "payload": "<decrypted data>"
-}
-```
-
-and pass it on to the outbound IP of that CID.
-
-If it does not have an outbound CID however, this could mean we are extending
-the tunnel, and we do not know exactly where to go. We interpret payload
-differently. In `<decrypted data>` we should find the IP where we want to relay
-the message. It is in fact another JSON object and has this structure:
+The decrypted payload should be interpreted as a JSON object, and has the
+following structure:
 
 ```json
 {
     "to": "<IP of Y>",
+    "aes_key": "<encrypted AES key for Y>",
     "relay": "<encrypted data>"
 }
 ```
 
-So we know we have to connect to Y. We generate a new CID for that new
-connection. Then, we can build a new object to send like this:
+The field `to` contains the IP address of the next node, where X will forward
+the message. In order to do that, X will first generate a new CID for the
+communication between X and Y, let's say this new CID is
+`e9ca363d-c386-415d-9c13-127e0ca0b673`. The fields `aes_key` and `relay` are
+destined to Y and are encrypted so that only Y can read it.
+
+Now, X has five pieces of data about its connection to A and the next hop, Y:
+
+`<DownIP, DownCID, SessKey, UpIP, UpCID>`
+
+Where `DownIP` is the IP address of A, `DownCID` is the CID between A and X (
+`35ce8f75-6b57-4824-8597-dd756c75a9c5`), `SessKey` is the AES symmetric key between A and X
+(`62E45FA2AA90DA900007FE59C88FDAEC`), `UpIP` is the IP of Y, and
+`UpCID` is the CID between X and Y (`e9ca363d-c386-415d-9c13-127e0ca0b673`).
+
+X will put all this data in its Relay table  so later on when it receives a
+message whose CID is in DownCID or UpCID it knows where to relay the message,
+and it knows the session key to encrypt/decrypt the payload.
+
+X can now forward the tunnel creation message to Y. It will create a new message
+for Y, such as
 
 ```json
 {
-    "CID": "e9ca363d-c386-415d-9c13-127e0ca0b673", <-- CID for link X - Y
+    "CID": "e9ca363d-c386-415d-9c13-127e0ca0b673",
+    "aes_key": "<encrypted AES key for Y>",
     "payload": "<encrypted data>"
 }
 ```
 
-where the encrypted data in "relay" is copied in "payload".
+where `aes_key` and `payload` are just copied from the message shown above.
 
-When Y receives this message, it interprets it just like how X interpreted its
-first message coming from A.
-
-The idea is to send the same "CREATE TUNNEL" message so node Y does not know at
-what position it is on the chain. Payload is encrypted with node Y's public key
-and it contains the session key shared between client A and Y.
-
-Node X now keeps in its data structure 5 things in relation:
-
-`<DownIP, DownCID, SessKey, UpIP, UpCID>`
-
-where `UpIP` is the IP address of Y, and `UpCID` is
-`e9ca363d-c386-415d-9c13-127e0ca0b673`.
-
-So whenever it receives something with a header CID in DownCID or UpCID it knows
-where to relay the message.
-
-The same thing is done with the third node to create the tunnel.
+When Y receives this message, the procedure is exactly the same as what X did,
+since the message Y receives contains the same fields  as what X received from
+A (note that the AES key that Y receives is shared between A and Y). Now, Y
+forwards the tunnel creation message to Z in the same way. The only difference
+for Z is that there is no longer a "aes_key" field for the tracker, since the
+messages are plaintext between the exit node Z and the tracker.
 
 As you may notice, we are modelling stateful multiplexed TLS secured TCP
 connections (actual implementation of the node network in TOR) with the data
@@ -134,32 +102,27 @@ IP's, CID's.
 
 ## Connecting the tracker
 
-When client A has the 3 session keys in its possession it has to send a final
-connection message to the tracker. The exit node Z will get a message with a CID
-for which it has no UpCID (nor any DownCID). This message is intended for the
-tracker. It will decrypt the payload with its private asymmetric key as
-described before and check the `to:` field and relay the message. As when
-extending the tunnel, the node Z will create a new CID for the connection
-between Z and the tracker. The payload of the message is the list of files the
-client will share to the torrent network.
+The final payload that Z forwards to the tracker is actually a list describing
+which files A can share on the torrent network. The tracker responds by
+giving the list of all files made available by the other users of the network.
 
 ## Message Once the Tunnel is Established
 
 The tracker always gets messages in plaintext. This is the TOR way and the
 simplest way. No encryption after the exit nodes.
 
-When a client sends a message to the tracker, the message is encrypted by the
+When a client sends a message to the tracker, the payload is encrypted by the
 client with the three symmetric keys of the three nodes X, Y and Z. Each node
-decrypts the message and relay to the next (thus it is plaintext between Z and
+decrypts the payload and relay to the next (thus it is plaintext between Z and
 the tracker). When the tracker responds, the message is also plaintext between
-the tracker and Z. Z encrypts the message with its symmetric key and send to Y.
+the tracker and Z. Z encrypts the payload with its symmetric key and send to Y.
 Y encrypts with its symmetric key, and so on. When the client receives a
-message, it always decrypts it with its three symmetric keys.
+message, it always decrypts the payload with its three symmetric keys.
 
 # Data Structures in a Node
 
-A node contains two tables in memory to forward messages: the *Relay Table* and
-the *File Sharing Table*.
+A node contains three tables in memory to forward messages: the *Relay Table*,
+the *Upstream File Sharing Table* and the *Downstream File Sharing Table*.
 
 ## Relay Table
 The relay table is filled as described in the
@@ -256,14 +219,8 @@ tracker.
 
 Nodes can at any point receive control messages from the tracker. How do they
 differentiate between messages intended for them and messages that have to go
-back to the client ? The CID used by the tracker will be "control". As in:
-
-```json
-{
-    "CID": "control",
-    ...
-}
-```
+back to the client ? The URL on which the message is sent is appended by
+`control/`, for example `http://192.168.0.14/control/`.
 
 * *Bridge creation*:
 
@@ -286,13 +243,15 @@ The message being sent is
 
 ```json
 {
-    "CID": "control",
     "type": "make_bridge",
     "bridge_CID": "<CID9>",
     "to": "<IP of Z1>",
     "FSID": "<FSID1>"
 }
 ```
+Note that this is the only message where the field `"CID"` is not used. In this
+case, the FSID is sufficient to indicate to Z2 which messages should be
+redirected to the bridge, it is independent from its link to the tracker.
 
 Upon receiving this message, Z2 creates an entry in its Upstream File Sharing Table:
 
@@ -313,24 +272,31 @@ to be properly redirected to Y1 and ultimately to C1. This control message is
 
 ```json
 {
-    "CID": "control",
+    "CID": "<CID4>",
     "type": "receive_bridge",
     "bridge_CID": "<CID9>"
 }
 ```
 
-The Downstream File Sharing Table is now
+In order to find the downstream link to which redirect file messages from the
+bridge, Z1 executes a lookup in its Relay table in the UpCID column with the CID
+it shares with the tracker (`CID4`). The matching DownCID and DownIP (which are
+`CID3` and the IP of Y in our example) indicate where to forward file messages.
+
+Z1 can fill the Downstream File Sharing Table with that information:
 
 | DownCID | BridgeCID |
 | ----- | ---- |
 | `<CID3>` | `<CID9>` |
 
+We do not store the DownIP or the SessKey here, as this would be redundant with
+the data in the Relay table.
 
 * *File sharing instruction*:
 
 1) Now that the bridge is established between Z2 and Z1, the tracker sends a
 request message to C2, instructing it to share its file name *Dikkenek.avi*,
-by using the File Sharing ID `FSID1`
+by using the File Sharing ID `FSID1`. The payload of the message is
 
 ```json
 {
@@ -343,8 +309,7 @@ by using the File Sharing ID `FSID1`
 2) Upon receiving this request, the message has been encrypted three times by
 the three nodes (Z2, Y2 and X2). C2 decrypts the message, fetch the file and
 send the file sharing message to its tunnel through X2. This message is
-encrypted three times. The innermost payload is as described in the previous
-section:
+encrypted three times. The payload is as described in the previous section:
 
 ```json
 {
@@ -356,12 +321,12 @@ section:
 ```
 
 3) When the message arrives to Z2, Z2 removes the last layer of encryption and
-sees that this is a file sharing message (the message is now plaintext).
+sees that this is a file sharing message (the payload is now plaintext).
 Therefore, Z2 does a lookup in its Upstream File Sharing Table by using the FSID
 contained in the message. This tells Z2 that the file should be transmitted to
 Z1 with CID `CID9`.
 
-4) Z2 forwards the file message to Z1:
+4) Z2 forwards the file message to Z1 (through the bridge):
 ```json
 {
     "CID": "<CID9>",
