@@ -154,7 +154,7 @@ def control():
     """Tracker control messages will arrive here."""
     # Read message, update table accordingly
     message = request.get_json()
-    if request.remote_addr == tracker and "CID" in message and message["CID"] == "control":
+    if request.remote_addr == tracker:
         node.handle_control(message)
 
 
