@@ -9,4 +9,4 @@ url = "https://pypi.org/simple"
 flask = "*"
 requests = "*"
 midict = "*"
-
+colorama= "*"
