@@ -3,8 +3,8 @@ import requests
 from flask import Flask, request
 from midict import MIDict
 
-from common.encoding import json_to_bytes, bytes_to_json
-from common.network_info import private_keys, cid_size
+from common.encoding import bytes_to_json, json_to_bytes
+from common.network_info import private_keys, cid_size, tracker
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
@@ -13,16 +13,15 @@ from crypto.rsa import rsa_decrypt
 
 
 class Node(Flask):
-    def __init__(self, name, ip, port):
+    def __init__(self, name, ip):
         super().__init__(name)
         self.private_key = private_keys[ip]
-        self.port = port
         self.relay = MIDict([], ["DownIP", "DownCID", "SessKey", "UpIP", "UpCID"])
         self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
         self.down_file_transfer = MIDict([], ["BridgeCID", "DownCID"])
 
     def run(self):
-        super().run(port=self.port, host='0.0.0.0')
+        super().run(host='0.0.0.0')
 
     def handle_message(self, message):
         # If the message is a file to be transmitted to a bridge
@@ -61,7 +60,7 @@ class Node(Flask):
             # The payload is not encrypted, just encoded
             "payload": json_to_bytes(payload).hex()
         }
-        requests.post("http://" + bridge_ip, data=new_message)
+        post("http://" + bridge_ip, data=new_message)
 
     def receive_from_bridge(self, message):
         down_cid = self.down_file_transfer["BridgeCID": message["CID"], "DownCID"]
@@ -72,7 +71,7 @@ class Node(Flask):
                 # Encrypt the message when sending downstream, we received it as encoded plaintext
                 "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
             }
-            requests.post("http://" + down_ip, data=new_message)
+            post("http://" + down_ip, data=new_message)
 
         except KeyError:
             # If we don't have a downstream CID matching in the relay table
@@ -85,7 +84,7 @@ class Node(Flask):
             # Decrypt the payload (peel one layer of the onion)
             "payload": aes_decrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        requests.post("http://" + up_ip, data=new_message)
+        post("http://" + up_ip, data=new_message)
 
     def forward_downstream(self, message):
         down_cid, down_ip, sess_key = self.relay["UpCID": message["CID"], ("DownCID", "DownIP", "SessKey")]
@@ -95,7 +94,7 @@ class Node(Flask):
             # Encrypt the payload (add a layer to the onion)
             "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        requests.post("http://" + down_ip, data=new_message)
+        post("http://" + down_ip, data=new_message)
 
     def create_tunnel(self, message):
         if "aes_key" not in message:
@@ -128,18 +127,29 @@ class Node(Flask):
             "aes_key": message["aes_key"],
             "payload": message["relay"]
         }
-        requests.post("http://" + message["to"], data=new_message)
+        post("http://" + message["to"], data=new_message)
+
+    def handle_control(self, message):
+        if "type" in message and message["type"] == "make_bridge":
+            self.make_bridge(message["FSID"], message["bridge_CID"], message["to"])
+        elif "type" in message and message["type"] == "receive_bridge":
+            self.receive_bridge(message["bridge_CID"], message["CID"])
+
+    def make_bridge(self, fsid, bridge_cid, bridge_ip):
+        self.up_file_transfer[fsid] = (bridge_cid, bridge_ip)
+
+    def receive_bridge(self, bridge_cid, origin_cid):
+        down_cid = self.relay["UpCID": origin_cid, "DownCID"]
+        self.down_file_transfer[bridge_cid] = (down_cid)
 
 
 parser = argparse.ArgumentParser(description='TORrent node')
 # We need the IP of the node so that it can find its own private RSA key in
 # common/network_info.py
 parser.add_argument('ip', type=str, help='ip address of the node')
-parser.add_argument('port', type=int, nargs='?', default=5000, help='port number of the node')
 args = parser.parse_args()
 
-node = Node(__name__, args.ip, args.port)
-
+node = Node(__name__, args.ip)
 
 @node.route("/", methods=['POST'])
 def index():
@@ -151,7 +161,9 @@ def index():
 def control():
     """Tracker control messages will arrive here."""
     # Read message, update table accordingly
-    pass
+    message = request.get_json()
+    if request.remote_addr == tracker:
+        node.handle_control(message)
 
 
 node.run()
