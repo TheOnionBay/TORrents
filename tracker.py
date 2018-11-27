@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, abort
 from common.network_info import cid_size
 from crypto.random_bytes import generate_bytes
 
@@ -29,14 +29,14 @@ class Tracker(Flask):
         message = request.get_json()
         # A new client connects to the network by sending the list of files
         if message["payload"]["type"] == "ls":
-            self.handle_new_client(message["CID"], request.remote_addr, message["payload"]["files"])
+            return self.handle_new_client(message["CID"], request.remote_addr, message["payload"]["files"])
 
         # A client sends a file request, this is the only other possibility
         else:
             if message["payload"]["type"] != "request":
-                return # TODO return an error code or something
+                return ("Unexpected payload type", 400)
 
-            self.handle_file_request(message["CID"], message["payload"]["file"])
+            return self.handle_file_request(message["CID"], message["payload"]["file"])
 
     def handle_new_client(self, cid, ip, files):
         """
@@ -44,7 +44,7 @@ class Tracker(Flask):
         and send back the list of available files.
         """
         # Add the IP address
-        self.peers[cid] == ip
+        self.peers[cid] = ip
 
         # Add the list of files
         for file in files:
@@ -59,6 +59,7 @@ class Tracker(Flask):
             }
         }
         requests.post(ip, data=response)
+        return "ok"
 
     def handle_file_request(self, request_client_cid, file):
         """
@@ -66,7 +67,7 @@ class Tracker(Flask):
         available.
         """
         if file not in self.files:
-            return # TODO return an error code or something
+            abort(404)
 
         request_client_ip = self.peers[request_client_cid]
 
@@ -108,6 +109,7 @@ class Tracker(Flask):
             }
         }
         requests.post(request_client_ip, data=request_message)
+        return "ok"
 
 tracker = Tracker()
 tracker.run(host='0.0.0.0')
