@@ -74,7 +74,7 @@ class Node(Flask):
             # The payload is not encrypted, just encoded
             "payload": json_to_bytes(payload).hex()
         }
-        post("http://" + bridge_ip, data=new_message)
+        requests.post("http://" + bridge_ip, data=new_message)
 
     def receive_from_bridge(self, message):
         down_cid = self.down_file_transfer["BridgeCID": message["CID"], "DownCID"]
@@ -85,7 +85,7 @@ class Node(Flask):
                 # Encrypt the message when sending downstream, we received it as encoded plaintext
                 "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
             }
-            post("http://" + down_ip, data=new_message)
+            requests.post("http://" + down_ip, data=new_message)
 
         except KeyError:
             # If we don't have a downstream CID matching in the relay table
@@ -98,7 +98,7 @@ class Node(Flask):
             # Decrypt the payload (peel one layer of the onion)
             "payload": aes_decrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        post("http://" + up_ip, data=new_message)
+        requests.post("http://" + up_ip, data=new_message)
 
     def forward_downstream(self, message):
         down_cid, down_ip, sess_key = self.relay["UpCID": message["CID"], ("DownCID", "DownIP", "SessKey")]
@@ -108,7 +108,7 @@ class Node(Flask):
             # Encrypt the payload (add a layer to the onion)
             "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        post("http://" + down_ip, data=new_message)
+        requests.post("http://" + down_ip, data=new_message)
 
     def create_tunnel(self, message):
         if "aes_key" not in message:
@@ -141,7 +141,7 @@ class Node(Flask):
             "aes_key": message["aes_key"],
             "payload": message["relay"]
         }
-        post("http://" + message["to"], data=new_message)
+        requests.post("http://" + message["to"], data=new_message)
 
     def make_bridge(self, fsid, bridge_cid, bridge_ip):
         self.up_file_transfer[fsid] = (bridge_cid, bridge_ip)
