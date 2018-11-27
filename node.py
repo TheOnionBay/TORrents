@@ -17,7 +17,7 @@ class Node(Flask):
     def __init__(self, name, ip):
         super().__init__(name)
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
-        self.add_url_rule("/control_handler/", "control_handler", self.control_handler, methods=["POST"])
+        self.add_url_rule("/control/", "control_handler", self.control_handler, methods=["POST"])
         self.private_key = private_keys[ip]
         self.relay = MIDict([], ["DownIP", "DownCID", "SessKey", "UpIP", "UpCID"])
         self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
