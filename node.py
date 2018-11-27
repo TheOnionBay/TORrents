@@ -13,8 +13,11 @@ from crypto.rsa import rsa_decrypt
 
 
 class Node(Flask):
+
     def __init__(self, name, ip):
         super().__init__(name)
+        self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
+        self.add_url_rule("/control_handler/", "control_handler", self.control_handler, methods=["POST"])
         self.private_key = private_keys[ip]
         self.relay = MIDict([], ["DownIP", "DownCID", "SessKey", "UpIP", "UpCID"])
         self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
@@ -23,7 +26,8 @@ class Node(Flask):
     def run(self):
         super().run(host='0.0.0.0')
 
-    def handle_message(self, message):
+    def main_handler(self):
+        message = request.get_json()
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
             self.transmit_to_bridge(message)
@@ -43,6 +47,16 @@ class Node(Flask):
         # We don't know the CID of the message, we assume it contains an AES key
         else:
             self.create_tunnel(message)
+
+    def control_handler(self):
+        """Tracker control messages will arrive here."""
+        # Read message, update table accordingly
+        message = request.get_json()
+        if request.remote_addr == tracker:
+            if "type" in message and message["type"] == "make_bridge":
+                self.make_bridge(message["FSID"], message["bridge_CID"], message["to"])
+            elif "type" in message and message["type"] == "receive_bridge":
+                self.receive_bridge(message["bridge_CID"], message["CID"])
 
     def transmit_to_bridge(self, message):
         if message["FSID"] not in self.up_file_transfer.indices["FSID"]:
@@ -129,12 +143,6 @@ class Node(Flask):
         }
         post("http://" + message["to"], data=new_message)
 
-    def handle_control(self, message):
-        if "type" in message and message["type"] == "make_bridge":
-            self.make_bridge(message["FSID"], message["bridge_CID"], message["to"])
-        elif "type" in message and message["type"] == "receive_bridge":
-            self.receive_bridge(message["bridge_CID"], message["CID"])
-
     def make_bridge(self, fsid, bridge_cid, bridge_ip):
         self.up_file_transfer[fsid] = (bridge_cid, bridge_ip)
 
@@ -148,22 +156,5 @@ parser = argparse.ArgumentParser(description='TORrent node')
 # common/network_info.py
 parser.add_argument('ip', type=str, help='ip address of the node')
 args = parser.parse_args()
-
 node = Node(__name__, args.ip)
-
-@node.route("/", methods=['POST'])
-def index():
-    message = request.get_json()
-    node.handle_message(message)
-
-
-@node.route("/control", methods=['POST'])
-def control():
-    """Tracker control messages will arrive here."""
-    # Read message, update table accordingly
-    message = request.get_json()
-    if request.remote_addr == tracker:
-        node.handle_control(message)
-
-
 node.run()
