@@ -4,10 +4,11 @@ from flask import Flask, render_template, jsonify, request
 from common.network_info import cid_size
 from crypto.random_bytes import generate_bytes
 
-
 class Tracker(Flask):
     def __init__(self):
         super().__init__(__name__, template_folder=os.path.abspath('tracker/templates'))
+        self.add_url_rule("/", "index", self.index, methods=["GET"])
+        self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
 
         self.files = {"movie1": "cid1",
                  "movie2": "cid2",
@@ -18,7 +19,14 @@ class Tracker(Flask):
 
         self.fsid_counter = 0
 
-    def handle_message(self, message):
+    def index(self):
+        # Process list of files a client has
+        return render_template("index.html",
+                               data={"file_list": list(self.files.keys()),
+                                     "peers": self.peers})
+
+    def main_handler(self):
+        message = request.get_json()
         # A new client connects to the network by sending the list of files
         if message["payload"]["type"] == "ls":
             self.handle_new_client(message["CID"], request.remote_addr, message["payload"]["files"])
@@ -29,7 +37,6 @@ class Tracker(Flask):
                 return # TODO return an error code or something
 
             self.handle_file_request(message["CID"], message["payload"]["file"])
-
 
     def handle_new_client(self, cid, ip, files):
         """
@@ -103,17 +110,4 @@ class Tracker(Flask):
         requests.post(request_client_ip, data=request_message)
 
 tracker = Tracker()
-
-@tracker.route("/", methods=['POST'])
-def main_handler():
-    message = request.get_json()
-    tracker.handle_message(message)
-
-@tracker.route("/", methods=['GET'])
-def index():
-    # Process list of files a client has
-    return render_template("index.html",
-                           data={"file_list": list(files.keys()),
-                                 "peers": peers})
-
 tracker.run(host='0.0.0.0')
