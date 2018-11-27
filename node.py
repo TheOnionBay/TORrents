@@ -12,8 +12,6 @@ from crypto.random_bytes import generate_bytes
 from crypto.rsa import rsa_decrypt
 
 
-# app = Flask(__name__)
-
 class Node(Flask):
     def __init__(self, name, ip, port):
         super().__init__(name)
