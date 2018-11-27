@@ -225,7 +225,7 @@ back to the client ? The URL on which the message is sent is appended by
 * *Bridge creation*:
 
 Assume the following setting:
-![](docs/schematic.png?raw=true)
+![](schematic.png?raw=true)
 Two clients, C1 and C2, are connected to the tracker, and we gave a name to the
 CircuitID of each link between nodes. Suppose C1 sends to the tracker a request
 to the tracker for a file named *Dikkenek.avi* that C2 can provide. We will
@@ -264,7 +264,7 @@ to forward the message, and which CID to put in the message.
 
 The situation is now looking like that:
 
-![](docs/schematic_bridge.png?raw=true)
+![](schematic_bridge.png?raw=true)
 
 4) The tracker sends *control message* to Z1, instructing it to add a new entry
 to its *Downstream File Sharing Table*. This will allow the file coming from Z2
