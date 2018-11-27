@@ -53,9 +53,9 @@ def expand_key(key):
 
     # round_constants is an array with the first powers of 0x02
     round_constants = [0x02 for i in range(n_rounds)]
-    for i in range(1, n_rounds):
+    for i in range(1, n_rounds-1):
         round_constants[i] = mul(0x02, round_constants[i - 1])
-    round_constants[1:] = round_constants[:-1]
+    round_constants[1:] = round_constants[:]
     round_constants[0] = 1
 
     res = bytearray((n_rounds + 1) * block_size)
