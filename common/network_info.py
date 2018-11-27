@@ -2,7 +2,7 @@ import json
 from crypto import rsa
 import os
 
-tracker = "192.168.0.7:5000"
+tracker = "192.168.0.7"
 
 node_pool = [
     "192.168.0.10:5000",
