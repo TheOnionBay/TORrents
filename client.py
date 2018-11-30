@@ -20,7 +20,7 @@ class Client(Flask):
         super().__init__(name, template_folder=os.path.abspath('client/templates'))
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
-        self.add_url_rule("/request/<file_name>", "request_handler", self.request_handler, methods=["POST"])
+        self.add_url_rule("/search", "search", self.search, methods=["POST"])
         self.file_list = json.loads(filenames)
 
     def run(self):
@@ -42,9 +42,9 @@ class Client(Flask):
         # Unencrypt request with keys available, max 3 times !
         pass
 
-    def request_handler(self, file_name):
+    def search(self):
         # Get filename wanted
-        file_name = file_name or ""
+        file_name = request.form["filename"] or ""
         print("Request File: ", file_name)
         tracker_payload = {
             "type": "request",
@@ -130,31 +130,5 @@ parser = argparse.ArgumentParser(description='TORrent client')
 parser.add_argument('lof', type=open, help='list of files')
 args = parser.parse_args()
 client = Client(__name__, args.lof.read())
-
-
-@client.route("/", methods=['GET'])
-def index():
-    # Serve HTML page with input to request file
-    # Make a request for the available files to download, for now just passing a the same files of the clinet
-    return render_template("index.html", data=client.file_list)
-
-
-@client.route("/", methods=['POST'])
-def main_handler():
-    """Client will receive comms from the tracker and files from other
-    peers on this handler
-    """
-    # Unencrypt request with keys available, max 3 times !
-    pass
-
-
-@client.route("/search", methods=['POST'])
-def search():
-    # Get filename wanted
-    file_name = request.form["filename"] or ""
-    print("Request File: ", file_name)
-    client.request_file(file_name)
-    return (''), 204
-
 
 client.run()
