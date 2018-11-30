@@ -28,12 +28,14 @@ class Client(Flask):
         super().run(host='0.0.0.0')
 
     def index(self):
+        print("index")
         # Serve HTML page with input to request file
         # Make a request for the available files to download, for now just passing a the same files of the clinet
         return render_template("index.html", data=client.file_list)
 
 
     def main_handler(self):
+        print("main")
         """Client will receive comms from the tracker and files from other
         peers on this handler. The client can receive two types of messages:
         * The list of files in the network
@@ -43,6 +45,8 @@ class Client(Flask):
         pass
 
     def search(self):
+        print("search")
+
         # Get filename wanted
         file_name = request.form["filename"] or ""
         print("Request File: ", file_name)
