@@ -71,7 +71,7 @@ def rsa_encrypt(plain_text, public_key):
     # TODO use more secure padding
     plain_text = int.from_bytes(plain_text, byteorder="big", signed=False)
 
-    assert plain_text < public.key.n, "plain_text must have a numerical value less than the modulus of the key"
+    assert plain_text < public_key.n, "plain_text must have a numerical value less than the modulus of the key"
 
     # Encrypt the message
     return exp_mod(plain_text, public_key.e, public_key.n).to_bytes(cipher_text_length, byteorder="big", signed=False)
