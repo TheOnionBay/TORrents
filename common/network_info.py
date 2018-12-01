@@ -2,15 +2,10 @@ import json
 from crypto import rsa
 import os
 
-tracker = "52.209.177.56:5000"
+tracker = "192.168.1.60:5000"
 
 node_pool = [
-    "node1.theonionbay.club:5000",
-    "node2.theonionbay.club:5000",
-    "node3.theonionbay.club:5000",
-    "node4.theonionbay.club:5000",
-    "node5.theonionbay.club:5000",
-    "node6.theonionbay.club:5000"
+    "192.168.1.55:5000"
 ]
 
 # For now private keys are stored here, we should decide how to create them
