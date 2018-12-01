@@ -2,6 +2,7 @@ import os
 import requests
 from flask import Flask, render_template, jsonify, request, abort
 from common.network_info import cid_size
+from common.encoding import json_to_bytes, bytes_to_json
 from crypto.random_bytes import generate_bytes
 
 
