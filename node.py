@@ -177,7 +177,7 @@ class Node(Flask):
         payload = aes_decrypt(bytes.fromhex(message["payload"]), sess_key)
         payload = bytes_to_json(payload)
 
-        if "aes_key" not in payload or "relay" not in payload or "to" not in payload:
+        if "relay" not in payload or "to" not in payload:
             # All these fields should be present
             return  # TODO throw an error
 
