@@ -194,9 +194,11 @@ class Node(Flask):
         new_message = {
             "CID": up_cid,
             # Copy verbatim the encrypted key and payload for the next node (not our business)
-            "aes_key": payload["aes_key"],
             "payload": payload["relay"]
         }
+        if "aes_key" in payload:
+            new_message["aes_key"] = payload["aes_key"]
+
         self.cprint([up_cid,payload["to"]], "addToRelay")
         requests.post("http://" + payload["to"], json=new_message)
         return "ok"
