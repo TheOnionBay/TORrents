@@ -57,6 +57,7 @@ class Node(Flask):
     def main_handler(self):
         print(self.relay)
         message = request.get_json()
+        print(message)
         self.cprint([request.remote_addr], "incoming")
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
