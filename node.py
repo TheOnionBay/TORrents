@@ -205,7 +205,6 @@ class Node(Flask):
     def cprint(self, args, id, colour=None):
         if colour is None:
             self.colour = choice(self.colours)
-            print("self.colour", self.colour)
         print(Back.BLACK + (colour or self.colour) + self.statements[id].format(*args), file=sys.stdout)
 
 
