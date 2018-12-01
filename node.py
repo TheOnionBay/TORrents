@@ -1,5 +1,5 @@
 import argparse
-#import requests
+import requests
 from flask import Flask, request
 from midict import MIDict
 
@@ -27,33 +27,36 @@ class Node(Flask):
         self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
         self.down_file_transfer = MIDict([], ["BridgeCID", "DownCID"])
 
-        self.ip=ip
-        self.colour=None
-        self.colours=[ Fore.YELLOW, Fore.MAGENTA, Fore.CYAN] #Fore.RED, Fore.GREEN,
-        self.statements= \
+        self.ip = ip
+        self.colour = None
+        self.colours = [Fore.YELLOW, Fore.MAGENTA, Fore.CYAN]  # Fore.RED, Fore.GREEN,
+        self.statements = \
             {
-                "online":"Node online at {0}",
-                "incoming":"Incoming message from {0}",#ip
-                "unknownCID":"Received message with unknown CID {0}",
-                "addToRelay":"Adding it to relay table with UpCID {0} and forward the message to next node at {1}", #ip of other node
-                "forward":"CID = {0}, forwarding it {1} to {2}", # cid , direction up/downstream ,ip of other node
-                "receive_from_bridge":"Message from bridge CID {0}, forwarding it downstream to {1}",
-                "transmit_to_bridge":"Transfer of file {0}, transmitting it to bridge at {1}", #fsid, bridge ip
-                "fromTracker":"Message from tracker at {0}",#ip of tracker
-                "make_bridge":"Creating bridge for {0} with CID {1} for the future file transfer of file {3}", # ip, cid,direction,fsid
-                "receive_bridge":"Creating bridge entry for the future downstream file transfer of a file to {0} with CID {1}", # ip, cid
+                "online": "Node online at {0}",
+                "incoming": "Incoming message from {0}",  # ip
+                "unknownCID": "Received message with unknown CID {0}",
+                "addToRelay": "Adding it to relay table with UpCID {0} and forward the message to next node at {1}",
+                # ip of other node
+                "forward": "CID = {0}, forwarding it {1} to {2}",  # cid , direction up/downstream ,ip of other node
+                "receive_from_bridge": "Message from bridge CID {0}, forwarding it downstream to {1}",
+                "transmit_to_bridge": "Transfer of file {0}, transmitting it to bridge at {1}",  # fsid, bridge ip
+                "fromTracker": "Message from tracker at {0}",  # ip of tracker
+                "make_bridge": "Creating bridge for {0} with CID {1} for the future file transfer of file {3}",
+            # ip, cid,direction,fsid
+                "receive_bridge": "Creating bridge entry for the future downstream file transfer of a file to {0} with CID {1}",
+            # ip, cid
 
             }
         # self.cprint(.format(ip),Fore.GREEN)
 
     def run(self):
-        self.cprint([self.ip],"online",Fore.GREEN)
+        self.cprint([self.ip], "online", Fore.GREEN)
         super().run(host='0.0.0.0')
 
 
     def main_handler(self):
         message = request.get_json()
-        self.cprint([request.remote_addr],"incoming")
+        self.cprint([request.remote_addr], "incoming")
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
             self.transmit_to_bridge(message)
@@ -80,7 +83,7 @@ class Node(Flask):
         # Read message, update table accordingly
         message = request.get_json()
         if request.remote_addr == tracker:
-            self.cprint([request.remote_addr,"fromTracker"])
+            self.cprint([request.remote_addr, "fromTracker"])
             if "type" in message and message["type"] == "make_bridge":
                 self.make_bridge(message["FSID"], message["bridge_CID"], message["to"])
                 return "ok"
@@ -88,13 +91,14 @@ class Node(Flask):
                 self.receive_bridge(message["bridge_CID"], message["CID"])
                 return "ok"
         return "nok"
+
     def transmit_to_bridge(self, message):
         if message["FSID"] not in self.up_file_transfer.indices["FSID"]:
             # We don't have file sharing data about this FSID
             return  # TODO Throw an error
 
         bridge_ip, bridge_cid = self.up_file_transfer["FSID": message["FSID"], ("BridgeIP", "BridgeCID")]
-        self.cprint([message["FSID"],bridge_ip],"transmit_to_bridge")
+        self.cprint([message["FSID"], bridge_ip], "transmit_to_bridge")
 
         payload = {
             "type": "file",
@@ -106,7 +110,7 @@ class Node(Flask):
             # The payload is not encrypted, just encoded
             "payload": json_to_bytes(payload).hex()
         }
-        post("http://" + bridge_ip, data=new_message)
+        requests.post("http://" + bridge_ip, data=new_message)
         return "ok"
 
     def receive_from_bridge(self, message):
@@ -114,14 +118,14 @@ class Node(Flask):
         try:
             down_ip, sess_key = self.relay["DownCID": down_cid, "DownIP"]
 
-            self.cprint([message["CID"],down_ip],"receive_from_bridge")
+            self.cprint([message["CID"], down_ip], "receive_from_bridge")
 
             new_message = {
                 "CID": down_cid,
                 # Encrypt the message when sending downstream, we received it as encoded plaintext
                 "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
             }
-            post("http://" + down_ip, data=new_message)
+            requests.post("http://" + down_ip, data=new_message)
             return "ok"
 
         except KeyError:
@@ -130,26 +134,26 @@ class Node(Flask):
 
     def forward_upstream(self, message):
         up_cid, up_ip, sess_key = self.relay["DownCID": message["CID"], ("UpCID", "UpIP", "SessKey")]
-        self.cprint([message["CID"],"upstream",up_ip],"forward")
+        self.cprint([message["CID"], "upstream", up_ip], "forward")
         new_message = {
             "CID": up_cid,
             # Decrypt the payload (peel one layer of the onion)
             "payload": aes_decrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        post("http://" + up_ip, data=new_message)
+        requests.post("http://" + up_ip, data=new_message)
         return "ok"
 
     def forward_downstream(self, message):
         down_cid, down_ip, sess_key = self.relay["UpCID": message["CID"], ("DownCID", "DownIP", "SessKey")]
 
-        self.cprint([message["CID"],"downstream",down_ip],"forward")
+        self.cprint([message["CID"], "downstream", down_ip], "forward")
 
         new_message = {
             "CID": down_cid,
             # Encrypt the payload (add a layer to the onion)
             "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        post("http://" + down_ip, data=new_message)
+        request.post("http://" + down_ip, data=new_message)
         return "ok"
 
     def create_tunnel(self, message):
@@ -157,7 +161,7 @@ class Node(Flask):
             return  # TODO throw an error
 
         # Decrypt the AES key
-        sess_key = rsa_decrypt(bytes.from_hex(message["aes_key"]), self.private_key)
+        sess_key = rsa_decrypt(bytes.fromhex(message["aes_key"]), self.private_key)
         sess_key = sess_key[-aes_common.key_size:]  # Discard the right padding created by RSA
 
         # Decrypt the payload with the AES key
@@ -172,7 +176,7 @@ class Node(Flask):
         # Generate a CID for the upstream link
         up_cid = generate_bytes(cid_size)
 
-        self.cprint([up_cid,message["CID"]],"unknownCID")
+        self.cprint([up_cid, message["CID"]], "unknownCID")
         # Add a line to the relay table
         self.relay[:, ("DownIP", "DownCID", "SessKey", "UpIP", "UpCID")] = \
             (request.remote_addr, message["CID"], sess_key, message["to"], up_cid)
@@ -184,26 +188,26 @@ class Node(Flask):
             "aes_key": message["aes_key"],
             "payload": message["relay"]
         }
-        self.cprint([message["to"]],"addToRelay")
-        post("http://" + message["to"], data=new_message)
+        self.cprint([message["to"]], "addToRelay")
+        requests.post("http://" + message["to"], data=new_message)
         return "ok"
 
     def make_bridge(self, fsid, bridge_cid, bridge_ip):
-        self.cprint([bridge_ip,bridge_cid,"outgoing",fsid],"make_bridge")
+        self.cprint([bridge_ip, bridge_cid, "outgoing", fsid], "make_bridge")
         self.up_file_transfer[fsid] = (bridge_cid, bridge_ip)
 
     def receive_bridge(self, bridge_cid, origin_cid):
-        down_cid,down_ip = self.relay["UpCID": origin_cid, ("DownCID","DownIP")]
+        down_cid, down_ip = self.relay["UpCID": origin_cid, ("DownCID", "DownIP")]
 
-        self.cprint([down_ip,down_cid],"receive_bridge")
+        self.cprint([down_ip, down_cid], "receive_bridge")
         self.down_file_transfer[bridge_cid] = (down_cid)
 
+    def cprint(self, args, id, colour=None):
+        if colour is None:
+            self.colour = choice(self.colours)
+            print("self.colour", self.colour)
+        print(Back.BLACK + (colour or self.colour) + self.statements[id].format(*args), file=sys.stdout)
 
-
-    def cprint(self,args,id,colour=None):
-        if colour==None:
-            self.colour=choice(self.colours)
-        print(Back.BLACK+colour+self.statements[id].format(*args),file=sys.stdout)
 
 parser = argparse.ArgumentParser(description='TORrent node')
 # We need the IP of the node so that it can find its own private RSA key in
