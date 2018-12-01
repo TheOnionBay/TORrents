@@ -110,7 +110,7 @@ class Node(Flask):
             # The payload is not encrypted, just encoded
             "payload": json_to_bytes(payload).hex()
         }
-        requests.post("http://" + bridge_ip, data=new_message)
+        requests.post("http://" + bridge_ip, json=new_message)
         return "ok"
 
     def receive_from_bridge(self, message):
@@ -125,7 +125,7 @@ class Node(Flask):
                 # Encrypt the message when sending downstream, we received it as encoded plaintext
                 "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
             }
-            requests.post("http://" + down_ip, data=new_message)
+            requests.post("http://" + down_ip, json=new_message)
             return "ok"
 
         except KeyError:
@@ -140,7 +140,7 @@ class Node(Flask):
             # Decrypt the payload (peel one layer of the onion)
             "payload": aes_decrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        requests.post("http://" + up_ip, data=new_message)
+        requests.post("http://" + up_ip, json=new_message)
         return "ok"
 
     def forward_downstream(self, message):
@@ -153,7 +153,7 @@ class Node(Flask):
             # Encrypt the payload (add a layer to the onion)
             "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        request.post("http://" + down_ip, data=new_message)
+        request.post("http://" + down_ip, json=new_message)
         return "ok"
 
     def create_tunnel(self, message):
@@ -189,7 +189,7 @@ class Node(Flask):
             "payload": payload["relay"]
         }
         self.cprint([up_cid,payload["to"]], "addToRelay")
-        requests.post("http://" + payload["to"], data=new_message)
+        requests.post("http://" + payload["to"], json=new_message)
         return "ok"
 
     def make_bridge(self, fsid, bridge_cid, bridge_ip):

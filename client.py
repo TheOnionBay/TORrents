@@ -16,7 +16,7 @@ import os
 
 
 class Client(Flask):
-    
+
     def __init__(self, name, filenames):
         super().__init__(name, template_folder=os.path.abspath('client/templates'))
         self.timer = None
@@ -138,7 +138,7 @@ class Client(Flask):
             "payload": aes_encrypt(json_to_bytes(payloadX), self.sesskeys[0]).hex()
         }
 
-        r = requests.post("http://" + self.tunnel_nodes[0], data=message)
+        r = requests.post("http://" + self.tunnel_nodes[0], json=message)
 
     def send_payload(self, payload):
         """Encrypts three times a message and send it to the tunnel.
