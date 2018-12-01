@@ -39,7 +39,7 @@ class Tracker(Flask):
             else:
                 self.timeouts[key] = False
 
-        Timer(to_value, self.check_timeouts)
+        Timer(to_value, self.check_timeouts).start()
 
     def remove_cid(self, cid):
         for file, origin in self.files:
@@ -57,8 +57,10 @@ class Tracker(Flask):
         message = request.get_json()
         self.timeouts[message["CID"]] = True
 
+        if message["payload"]["type"] == "ping":
+            return "ok"
         # A new client connects to the network by sending the list of files
-        if message["payload"]["type"] == "ls":
+        elif message["payload"]["type"] == "ls":
             return self.handle_new_client(message["CID"], request.remote_addr, message["payload"]["files"])
 
         # A client sends a file request, this is the only other possibility

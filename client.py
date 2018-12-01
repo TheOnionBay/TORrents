@@ -3,6 +3,7 @@ import json
 import argparse
 from flask import Flask, render_template, request
 from random import sample
+from threading import Timer
 
 from crypto.rsa import rsa_encrypt, rsa_decrypt
 from crypto.random_bytes import generate_bytes
@@ -15,9 +16,10 @@ import os
 
 
 class Client(Flask):
-
+    
     def __init__(self, name, filenames):
         super().__init__(name, template_folder=os.path.abspath('client/templates'))
+        self.timer = None
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/search", "search", self.search, methods=["POST"])
@@ -25,6 +27,7 @@ class Client(Flask):
 
     def run(self):
         self.conn()
+
         super().run(host='0.0.0.0')
 
     def index(self):
@@ -32,6 +35,16 @@ class Client(Flask):
         # Make a request for the available files to download, for now just passing a the same files of the client
         return render_template("index.html", data=client.file_list)
 
+    def ping_tracker(self, to_value=30):
+        payload = {"type": "ping"}
+        self.send_payload(payload)
+        self.reset_timer(to_value)
+
+    def reset_timer(self, to_value=30):
+        if self.timer:
+            self.timer.cancel()
+        self.timer = Timer(to_value, self.ping_tracker)
+        self.timer.start()
 
     def main_handler(self):
         """Client will receive comms from the tracker and files from other
@@ -131,6 +144,7 @@ class Client(Flask):
         """Encrypts three times a message and send it to the tunnel.
         The tunnel has to be established beforehand.
         """
+        self.reset_timer()
         payload = json_to_bytes(payload)
 
         # Encrypt in the reverse order, the closest node (first in the list) decrypts first
