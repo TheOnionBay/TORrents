@@ -24,12 +24,12 @@ class Client(Flask):
         self.file_list = json.loads(filenames)
 
     def run(self):
-        #self.conn()
+        self.conn()
         super().run(host='0.0.0.0')
 
     def index(self):
         # Serve HTML page with input to request file
-        # Make a request for the available files to download, for now just passing a the same files of the clinet
+        # Make a request for the available files to download, for now just passing a the same files of the client
         return render_template("index.html", data=client.file_list)
 
 
