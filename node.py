@@ -60,25 +60,32 @@ class Node(Flask):
         self.cprint([request.remote_addr], "incoming")
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
+            print("IFCASE: File for the bridge")
             self.transmit_to_bridge(message)
 
         # If the message is received from a bridge, and to be transmitted down to the client
         elif message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
+            print("IFCASE: Received from bridge, transmitting down")
             self.receive_from_bridge(message)
 
         # If the message is a normal message from down to upstream
         elif message["CID"] in self.relay.indices["DownCID"]:
+            print("IFCASE: Normal message")
             self.forward_upstream(message)
 
         # If the message is a response from up to downstream
         elif message["CID"] in self.relay.indices["UpCID"]:
+            print("IFCASE: ")
             self.forward_downstream(message)
 
         # We don't know the CID of the message, we assume it contains an AES key
         else:
+            print("IFCASE: I have to create tunnel !")
             self.create_tunnel(message)
 
         return "ok"
+
+
     def control_handler(self):
         """Tracker control messages will arrive here."""
         # Read message, update table accordingly
