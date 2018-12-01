@@ -24,7 +24,7 @@ class Tracker(Flask):
                         }
         self.fsid_counter = 0
 
-        self.check_timeouts(60)
+        self.check_timeouts()
 
     def index(self):
         # Process list of files a client has
