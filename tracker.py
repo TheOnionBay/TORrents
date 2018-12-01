@@ -8,9 +8,6 @@ from threading import Timer
 
 
 class Tracker(Flask):
-
-    to_value = 60
-
     def __init__(self):
         super().__init__(__name__, template_folder=os.path.abspath('tracker/templates'))
         self.add_url_rule("/", "index", self.index, methods=["GET"])
@@ -27,7 +24,7 @@ class Tracker(Flask):
                         }
         self.fsid_counter = 0
 
-        self.check_timeouts()
+        self.check_timeouts(60)
 
     def index(self):
         # Process list of files a client has
@@ -35,14 +32,14 @@ class Tracker(Flask):
                                data={"file_list": list(self.files.keys()),
                                      "peers": self.peers})
 
-    def check_timeouts(self):
+    def check_timeouts(self, to_value):
         for key, value in self.timeouts.items():
             if not value:
                 self.remove_cid(key)
             else:
                 self.timeouts[key] = False
 
-        Timer(Tracker.to_value, self.check_timeouts).start()
+        Timer(to_value, self.check_timeouts)
 
     def remove_cid(self, cid):
         for file, origin in self.files:
@@ -60,10 +57,8 @@ class Tracker(Flask):
         message = request.get_json()
         self.timeouts[message["CID"]] = True
 
-        if message["payload"]["type"] == "ping":
-            return "ok"
         # A new client connects to the network by sending the list of files
-        elif message["payload"]["type"] == "ls":
+        if message["payload"]["type"] == "ls":
             return self.handle_new_client(message["CID"], request.remote_addr, message["payload"]["files"])
 
         # A client sends a file request, this is the only other possibility
