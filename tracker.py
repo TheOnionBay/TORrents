@@ -8,6 +8,9 @@ from threading import Timer
 
 
 class Tracker(Flask):
+
+    to_value = 60
+
     def __init__(self):
         super().__init__(__name__, template_folder=os.path.abspath('tracker/templates'))
         self.add_url_rule("/", "index", self.index, methods=["GET"])
@@ -24,7 +27,7 @@ class Tracker(Flask):
                         }
         self.fsid_counter = 0
 
-        self.check_timeouts(60)
+        self.check_timeouts()
 
     def index(self):
         # Process list of files a client has
@@ -32,14 +35,14 @@ class Tracker(Flask):
                                data={"file_list": list(self.files.keys()),
                                      "peers": self.peers})
 
-    def check_timeouts(self, to_value):
+    def check_timeouts(self):
         for key, value in self.timeouts.items():
             if not value:
                 self.remove_cid(key)
             else:
                 self.timeouts[key] = False
 
-        Timer(to_value, self.check_timeouts).start()
+        Timer(Tracker.to_value, self.check_timeouts).start()
 
     def remove_cid(self, cid):
         for file, origin in self.files:
