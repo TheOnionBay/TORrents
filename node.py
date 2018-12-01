@@ -164,7 +164,7 @@ class Node(Flask):
             # Encrypt the payload (add a layer to the onion)
             "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        request.post("http://" + down_ip, json=new_message)
+        requests.post("http://" + down_ip, json=new_message)
         return "ok"
 
     def create_tunnel(self, message):
