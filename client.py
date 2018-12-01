@@ -25,7 +25,7 @@ class Client(Flask):
 
     def run(self):
         self.conn()
-        super().run(host='0.0.0.0')
+        super().run(host='0.0.0.0', use_reloader=False)
 
     def index(self):
         # Serve HTML page with input to request file
@@ -90,6 +90,7 @@ class Client(Flask):
         client has.
         """
         self.tunnel_nodes = self.select_nodes(node_pool)
+        print("I CHOSE: ", self.tunnel_nodes)
         self.sesskeys = [generate_bytes(aes_common.key_size) for _ in self.tunnel_nodes]
         self.cid = generate_bytes(cid_size).hex()
 

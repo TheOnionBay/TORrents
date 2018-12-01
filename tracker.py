@@ -114,4 +114,4 @@ class Tracker(Flask):
         return "ok"
 
 tracker = Tracker()
-tracker.run(host='0.0.0.0')
+tracker.run(host='0.0.0.0', use_reloader=False)

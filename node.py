@@ -51,7 +51,7 @@ class Node(Flask):
 
     def run(self):
         self.cprint([self.ip], "online", Fore.GREEN)
-        super().run(host='0.0.0.0')
+        super().run(host='0.0.0.0', use_reloader=False)
 
 
     def main_handler(self):
