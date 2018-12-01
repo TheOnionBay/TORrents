@@ -39,8 +39,36 @@ class Client(Flask):
         * The list of files in the network
         * A request for a sharing a file
         """
+        msg = request.get_json()
+        if msg["type"] == "request":
+            return self.handle_request(msg)
+        elif msg["type"] == "file":
+            return self.handle_request_answer(msg)
+        else:
+            return ("Unexpected payload type", 400)
+
+        #print("yoyo main handler:", request.get_json())
+
+    def handle_request_answer(self, message):
+        file = message["file"]
+        data = message["data"]
+        self.file_list[0][file] = data
+        return "ok"
+
+    def handle_request(self, message):
+        file = message["file"]
+        fsid = message["FSID"]
+
+        d = {
+            "type": "file",
+            "file": file,
+            "data": self.file_list[0][file],
+            "FSID": fsid
+        }
         # Unencrypt request with keys available, max 3 times !
-        pass
+        #pass
+        send_payload(d)
+        return "ok"
 
     def search(self):
         # Get filename wanted
