@@ -96,7 +96,7 @@ class Client(Flask):
 
     def select_nodes(self, node_pool):
         """Selects 3 public nodes from the available pool."""
-        return sample(node_pool, 3)
+        return ['192.168.1.3:5000', '192.168.1.55:5000','192.168.1.55:5000']
 
     def conn(self):
         """Connects to the torrent network, uploading the list of files this
