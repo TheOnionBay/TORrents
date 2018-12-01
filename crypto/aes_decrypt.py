@@ -22,6 +22,8 @@ def decrypt(cipher_text, key):
         previous_cipher_text = block
         res += plain_text_block
 
+    res = res.strip(b'\x00')
+
     return res
 
 def aes_decrypt_block(cipher_text, key_schedule):

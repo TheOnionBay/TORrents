@@ -2,6 +2,7 @@ import os
 import requests
 from flask import Flask, render_template, jsonify, request, abort
 from common.network_info import cid_size
+from common.encoding import json_to_bytes, bytes_to_json
 from crypto.random_bytes import generate_bytes
 
 
@@ -28,16 +29,19 @@ class Tracker(Flask):
 
     def main_handler(self):
         message = request.get_json()
+        payload = bytes_to_json(bytes.fromhex(message["payload"]))
+
         # A new client connects to the network by sending the list of files
-        if message["payload"]["type"] == "ls":
-            return self.handle_new_client(message["CID"], request.remote_addr, message["payload"]["files"])
+        from_ip = request.remote_addr + ":5000"
+        if payload["type"] == "ls":
+            return self.handle_new_client(message["CID"], from_ip, payload["files"])
 
         # A client sends a file request, this is the only other possibility
         else:
-            if message["payload"]["type"] != "request":
+            if payload["type"] != "request":
                 return ("Unexpected payload type", 400)
 
-            return self.handle_file_request(message["CID"], message["payload"]["file"])
+            return self.handle_file_request(message["CID"], payload["file"])
 
     def handle_new_client(self, cid, ip, files):
         """
@@ -54,13 +58,13 @@ class Tracker(Flask):
         # Send back the list of files
         response = {
             "CID": cid,
-            "payload": {
+            "payload": json_to_bytes({
                 "type": "ls",
                 "files": list(self.files.keys())
-            }
+            }).hex()
         }
         url = "http://" + ip
-        requests.post(url, data=response)
+        requests.post(url, json=response)
         return "ok"
 
     def handle_file_request(self, request_client_cid, file):
@@ -90,7 +94,7 @@ class Tracker(Flask):
             "FSID": fsid
         }
         # Send on the control channel of the node
-        requests.post("http://" + owning_client_ip + "/control/", data=make_bridge_message)
+        requests.post("http://" + owning_client_ip + "/control/", json=make_bridge_message)
 
         # Send a message to the node at the end of the bridge
         receive_bridge_message = {
@@ -99,19 +103,19 @@ class Tracker(Flask):
             "bridge_CID": bridge_cid
         }
         # Send on the control channel of the node
-        requests.post("http://" + request_client_ip + "/control/", data=receive_bridge_message)
+        requests.post("http://" + request_client_ip + "/control/", json=receive_bridge_message)
 
         # Send a message to the client, asking he/she to send the file
         request_message = {
             "CID": owning_client_cid,
-            "payload": {
+            "payload": json_to_bytes({
                 "type": "request",
                 "file": file,
                 "FSID": fsid
-            }
+            }).hex()
         }
-        requests.post("http://" + request_client_ip, data=request_message)
+        requests.post("http://" + request_client_ip, json=request_message)
         return "ok"
 
 tracker = Tracker()
-tracker.run(host='0.0.0.0')
+tracker.run(host='0.0.0.0', use_reloader=False)

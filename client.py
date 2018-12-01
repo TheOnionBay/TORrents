@@ -24,12 +24,12 @@ class Client(Flask):
         self.file_list = json.loads(filenames)
 
     def run(self):
-        #self.conn()
-        super().run(host='0.0.0.0')
+        self.conn()
+        super().run(host='0.0.0.0', use_reloader=False)
 
     def index(self):
         # Serve HTML page with input to request file
-        # Make a request for the available files to download, for now just passing a the same files of the clinet
+        # Make a request for the available files to download, for now just passing a the same files of the client
         return render_template("index.html", data=client.file_list)
 
 
@@ -39,8 +39,36 @@ class Client(Flask):
         * The list of files in the network
         * A request for a sharing a file
         """
+        msg = request.get_json()
+        if msg["type"] == "request":
+            return self.handle_request(msg)
+        elif msg["type"] == "file":
+            return self.handle_request_answer(msg)
+        else:
+            return ("Unexpected payload type", 400)
+
+        #print("yoyo main handler:", request.get_json())
+
+    def handle_request_answer(self, message):
+        file = message["file"]
+        data = message["data"]
+        self.file_list[0][file] = data
+        return "ok"
+
+    def handle_request(self, message):
+        file = message["file"]
+        fsid = message["FSID"]
+
+        d = {
+            "type": "file",
+            "file": file,
+            "data": self.file_list[0][file],
+            "FSID": fsid
+        }
         # Unencrypt request with keys available, max 3 times !
-        pass
+        #pass
+        send_payload(d)
+        return "ok"
 
     def search(self):
         # Get filename wanted
@@ -62,6 +90,7 @@ class Client(Flask):
         client has.
         """
         self.tunnel_nodes = self.select_nodes(node_pool)
+        print("I CHOSE: ", self.tunnel_nodes)
         self.sesskeys = [generate_bytes(aes_common.key_size) for _ in self.tunnel_nodes]
         self.cid = generate_bytes(cid_size).hex()
 
@@ -97,7 +126,7 @@ class Client(Flask):
             "payload": aes_encrypt(json_to_bytes(payloadX), self.sesskeys[0]).hex()
         }
 
-        r = requests.post("http://" + self.tunnel_nodes[0], data=message)
+        r = requests.post("http://" + self.tunnel_nodes[0], json=message)
 
     def send_payload(self, payload):
         """Encrypts three times a message and send it to the tunnel.
@@ -114,7 +143,7 @@ class Client(Flask):
             "payload": payload.hex()
         }
 
-        r = requests.post("http://" + self.tunnel_nodes[0], data=message)
+        r = requests.post("http://" + self.tunnel_nodes[0], json=message)
 
     def client_loop(self):
         """This function makes the client interactive and puts the terminal in
