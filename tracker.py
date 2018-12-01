@@ -32,8 +32,9 @@ class Tracker(Flask):
         payload = bytes_to_json(bytes.fromhex(message["payload"]))
 
         # A new client connects to the network by sending the list of files
+        from_ip = request.remote_addr + ":5000"
         if payload["type"] == "ls":
-            return self.handle_new_client(message["CID"], request.remote_addr, payload["files"])
+            return self.handle_new_client(message["CID"], from_ip, payload["files"])
 
         # A client sends a file request, this is the only other possibility
         else:

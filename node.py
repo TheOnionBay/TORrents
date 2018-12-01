@@ -58,7 +58,8 @@ class Node(Flask):
         print(self.relay)
         message = request.get_json()
         print(message)
-        self.cprint([request.remote_addr], "incoming")
+        from_ip = request.remote_addr + ":5000"
+        self.cprint([from_ip], "incoming")
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
             print("IFCASE: File for the bridge")
@@ -91,8 +92,9 @@ class Node(Flask):
         """Tracker control messages will arrive here."""
         # Read message, update table accordingly
         message = request.get_json()
-        if request.remote_addr == tracker:
-            self.cprint([request.remote_addr, "fromTracker"])
+        from_ip = request.remote_addr + ":5000"
+        if from_ip == tracker:
+            self.cprint([from_ip, "fromTracker"])
             if "type" in message and message["type"] == "make_bridge":
                 self.make_bridge(message["FSID"], message["bridge_CID"], message["to"])
                 return "ok"
@@ -188,7 +190,7 @@ class Node(Flask):
         self.cprint([message["CID"]], "unknownCID")
         # Add a line to the relay table
         self.relay[:, ("DownIP", "DownCID", "SessKey", "UpIP", "UpCID")] = \
-            (request.remote_addr, message["CID"], sess_key, payload["to"], up_cid)
+            (request.remote_addr + ":5000", message["CID"], sess_key, payload["to"], up_cid)
 
         # Forward the payload to the next node upstream
         new_message = {
