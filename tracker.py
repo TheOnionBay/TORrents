@@ -58,10 +58,10 @@ class Tracker(Flask):
         # Send back the list of files
         response = {
             "CID": cid,
-            "payload": {
+            "payload": json_to_bytes({
                 "type": "ls",
                 "files": list(self.files.keys())
-            }
+            }).hex()
         }
         url = "http://" + ip
         requests.post(url, json=response)
@@ -108,11 +108,11 @@ class Tracker(Flask):
         # Send a message to the client, asking he/she to send the file
         request_message = {
             "CID": owning_client_cid,
-            "payload": {
+            "payload": json_to_bytes({
                 "type": "request",
                 "file": file,
                 "FSID": fsid
-            }
+            }).hex()
         }
         requests.post("http://" + request_client_ip, json=request_message)
         return "ok"
