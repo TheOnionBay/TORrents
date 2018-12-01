@@ -174,22 +174,22 @@ class Node(Flask):
             return  # TODO throw an error
 
         # Generate a CID for the upstream link
-        up_cid = generate_bytes(cid_size)
+        up_cid = generate_bytes(cid_size).hex()
 
-        self.cprint([up_cid, message["CID"]], "unknownCID")
+        self.cprint([message["CID"]], "unknownCID")
         # Add a line to the relay table
         self.relay[:, ("DownIP", "DownCID", "SessKey", "UpIP", "UpCID")] = \
-            (request.remote_addr, message["CID"], sess_key, message["to"], up_cid)
+            (request.remote_addr, message["CID"], sess_key, payload["to"], up_cid)
 
         # Forward the payload to the next node upstream
         new_message = {
             "CID": up_cid,
             # Copy verbatim the encrypted key and payload for the next node (not our business)
-            "aes_key": message["aes_key"],
-            "payload": message["relay"]
+            "aes_key": payload["aes_key"],
+            "payload": payload["relay"]
         }
-        self.cprint([message["to"]], "addToRelay")
-        requests.post("http://" + message["to"], data=new_message)
+        self.cprint([up_cid,payload["to"]], "addToRelay")
+        requests.post("http://" + payload["to"], data=new_message)
         return "ok"
 
     def make_bridge(self, fsid, bridge_cid, bridge_ip):
@@ -205,7 +205,6 @@ class Node(Flask):
     def cprint(self, args, id, colour=None):
         if colour is None:
             self.colour = choice(self.colours)
-            print("self.colour", self.colour)
         print(Back.BLACK + (colour or self.colour) + self.statements[id].format(*args), file=sys.stdout)
 
 

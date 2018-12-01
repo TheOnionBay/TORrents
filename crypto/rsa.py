@@ -99,7 +99,8 @@ def rsa_decrypt(cipher_text, private_key):
     res = exp_mod(cipher_text, private_key.d, private_key.n)
 
     # Convert the result back to bytes
-    return res.to_bytes(max_message_length, byteorder="big", signed=False)
+    res=res.to_bytes(max_message_length, byteorder="big", signed=False)
+    return res
 
 def mod_inverse(a, b):
     """Calculates the inverse of a in a ring of modulus b. That is,
@@ -165,6 +166,3 @@ def exp_mod(a, e, b):
         if e & (1 << i):
             product *= power_of_a
     return product % b
-
-k=RSAPublicKey(137239950060667306637124035181352808161894772000490213521350901387320825984097294965854449914161700304039027222979323896436433016113549242371854016649442038716545150423516732626410240826184113279626997604723939315176133516459191016604729290568340243771544939189385409117077684332902957032170549050816408974189,e)
-print(rsa_encrypt(bytes.fromhex("2b7e151628aed2a6abf7158809cf4f3c"),k))
