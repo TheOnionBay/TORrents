@@ -32,7 +32,7 @@ class Tracker(Flask):
                                data={"file_list": list(self.files.keys()),
                                      "peers": self.peers})
 
-    def check_timeouts(self, to_value):
+    def check_timeouts(self):
         for key, value in self.timeouts.items():
             if not value:
                 self.remove_cid(key)
