@@ -156,7 +156,7 @@ class Client(Flask):
             "payload": payload.hex()
         }
 
-        r = requests.post("http://" + self.tunnel_nodes[0], data=message)
+        r = requests.post("http://" + self.tunnel_nodes[0], json=message)
 
     def client_loop(self):
         """This function makes the client interactive and puts the terminal in
