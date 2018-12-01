@@ -11,7 +11,7 @@ cipher_text_length = key_width // 8
 
 # Maximum size of a message in bytes. This ensures that the number represented
 # by the message is less than the modulus of the key
-max_message_length = (key_width // 8) - 1
+max_message_length = (key_width // 8)
 
 # Public exponant, we fix it and search for p and q such that gcd(e, lambda_n) == 1
 # This value is a common one found online.
@@ -70,6 +70,8 @@ def rsa_encrypt(plain_text, public_key):
     # Convert plain_text to number
     # TODO use more secure padding
     plain_text = int.from_bytes(plain_text, byteorder="big", signed=False)
+
+    assert plain_text < public.key.n, "plain_text must have a numerical value less than the modulus of the key"
 
     # Encrypt the message
     return exp_mod(plain_text, public_key.e, public_key.n).to_bytes(cipher_text_length, byteorder="big", signed=False)
