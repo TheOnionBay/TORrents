@@ -8,7 +8,8 @@ node_pool = [
     "192.168.1.11:5000",
     "192.168.1.12:5000",
     "192.168.1.19:5000",
-    "192.168.1.3:5000"
+    "192.168.1.3:5000",
+    "192.168.1.55:5000"
 ]
 
 # For now private keys are stored here, we should decide how to create them
