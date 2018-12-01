@@ -28,16 +28,18 @@ class Tracker(Flask):
 
     def main_handler(self):
         message = request.get_json()
+        payload = bytes_to_json(bytes.fromhex(message["payload"]))
+
         # A new client connects to the network by sending the list of files
-        if message["payload"]["type"] == "ls":
-            return self.handle_new_client(message["CID"], request.remote_addr, message["payload"]["files"])
+        if payload["type"] == "ls":
+            return self.handle_new_client(message["CID"], request.remote_addr, payload["files"])
 
         # A client sends a file request, this is the only other possibility
         else:
-            if message["payload"]["type"] != "request":
+            if payload["type"] != "request":
                 return ("Unexpected payload type", 400)
 
-            return self.handle_file_request(message["CID"], message["payload"]["file"])
+            return self.handle_file_request(message["CID"], payload["file"])
 
     def handle_new_client(self, cid, ip, files):
         """
