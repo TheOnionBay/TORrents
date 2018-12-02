@@ -49,7 +49,7 @@ class Tracker(Flask):
         elif payload["type"] == "request":
             return self.handle_file_request(message["CID"], payload["file"])
         else:
-            return ("Unexpected payload type: " + payload["type"], 400)
+            return ("Unexpected payload type: " + payload["type"], 400) # 400 Bad Request
 
     def handle_new_client(self, cid, ip, files):
         """Registers a new client by remembering the CID and IP of the exit
@@ -79,7 +79,7 @@ class Tracker(Flask):
 
         """
         if file not in self.files:
-            abort(404)
+            return ("file not found in network files: " + file, 404) # 404 Not Found
 
         request_client_ip = self.peers[request_client_cid]
 

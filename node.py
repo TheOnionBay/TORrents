@@ -77,29 +77,27 @@ class Node(Flask):
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
             if self.fsid_exists(message["FSID"]):
-                self.transmit_to_bridge(message, colour)
+                return self.transmit_to_bridge(message, colour)
             else:
-                return "nok" #TODO throw error
+                return "FSID not found for file sharing", 404
 
         # If the message is received from a bridge, and to be
         # transmitted down to the client
         elif message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
-            self.receive_from_bridge(message, colour)
+            return self.receive_from_bridge(message, colour)
 
         # If the message is a normal message from down to upstream
         elif message["CID"] in self.down_relay.keys():
-            self.forward_upstream(message, colour)
+            return self.forward_upstream(message, colour)
 
         # If the message is a response from up to downstream
         elif message["CID"] in self.up_relay.keys():
-            self.forward_downstream(message, colour)
+            return self.forward_downstream(message, colour)
 
         # We don't know the CID of the message, we assume it contains
         # an AES key
         else:
-            self.create_tunnel(message, colour)
-
-        return "ok"
+            return self.create_tunnel(message, colour)
 
     def control_handler(self):
         """Tracker control messages will arrive here. The table is update
@@ -112,12 +110,10 @@ class Node(Flask):
         if from_ip == tracker:
             self.cprint([from_ip, "fromTracker"], colour)
             if "type" in message and message["type"] == "make_bridge":
-                self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
-                return "ok"
+                return self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
             elif "type" in message and message["type"] == "receive_bridge":
-                self.receive_bridge(message["bridge_CID"], message["CID"], colour)
-                return "ok"
-        return "nok"
+                return self.receive_bridge(message["bridge_CID"], message["CID"], colour)
+        return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
 
     def matching_cid_ip_from_down(self, cid, fromip):
         return fromip == self.down_relay[cid]["DownIP"]
@@ -199,7 +195,7 @@ class Node(Flask):
 
     def create_tunnel(self, message, colour):
         if "aes_key" not in message:
-            return  # TODO throw an error
+            return "aes_key is needed in message when creating the tunnel", 400 # 400 Bad Request
 
         # Decrypt the AES key
         sess_key = rsa_decrypt(bytes.fromhex(message["aes_key"]), self.private_key)
@@ -212,7 +208,7 @@ class Node(Flask):
 
         if "relay" not in payload or "to" not in payload:
             # All these fields should be present
-            return  # TODO throw an error
+            return "relay and to are needed in payload when creating the tunnel", 400 # 400 Bad Request
 
         # Generate a CID for the upstream link
         up_cid = generate_bytes(cid_size).hex()
@@ -246,6 +242,7 @@ class Node(Flask):
     def make_bridge(self, fsid, bridge_cid, bridge_ip, colour):
         self.cprint([bridge_ip, bridge_cid, "outgoing", fsid], "make_bridge",colour)
         self.up_file_transfer[fsid] = (bridge_cid, bridge_ip)
+        return "ok"
 
     def receive_bridge(self, bridge_cid, origin_cid, colour):
         down_cid = self.up_relay[origin_cid]["DownCID"]
@@ -253,6 +250,7 @@ class Node(Flask):
 
         self.cprint([down_ip, down_cid], "receive_bridge", colour)
         self.down_file_transfer[bridge_cid] = (down_cid)
+        return "ok"
 
     def cprint(self, args, id, colour):
         self.log += self.statements[id].format(*args)
