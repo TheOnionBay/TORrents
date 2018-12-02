@@ -38,7 +38,7 @@ class Node(Flask):
         self.statements = \
             {
                 "online": "Node online at {0}",
-                "incoming": "Incoming message from {0}",  # ip
+                "incoming": "\n -->Incoming message from {0}",  # ip
                 "cid": "The message has CID {0}",
                 "unknownCID": "Received message with unknown CID {0}",
                 "add_to_relay": "Adding it to relay table with UpCID {0} and forward the message to next node at {1}",
@@ -256,7 +256,7 @@ class Node(Flask):
 
     def cprint(self, args, id, colour):
         self.log += self.statements[id].format(*args)
-        self.log += "\n\n"
+        self.log += "\n"
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
 
 
