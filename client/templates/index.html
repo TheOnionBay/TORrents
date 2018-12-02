@@ -42,7 +42,7 @@
                   <tbody>
                      {% for file in data['owned_files'] %}
                      <tr>
-                        <td>{{file['name']}}</td>
+                        <td>{{file}}</td>
                      </tr>
                      {% endfor %}
                   </tbody>
@@ -59,9 +59,9 @@
                   </thead>
 
                   <tbody>
-                     {% for file in data['available_files'] %}
+                     {% for file in data['network_files'] %}
                      <tr>
-                        <td>{{file['name']}}</td>
+                        <td>{{file}}</td>
                         <td>
                            <form class="col s12 m6" action="/request" method="post">
                               <button class="btn waves-effect waves-light" type="submit" name="action">

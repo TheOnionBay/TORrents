@@ -26,7 +26,6 @@ class Client(Flask):
         self.network_files = set()
         self.tunnel_nodes = []
         self.connected = False
-        print(self.owned_files)
 
     def run(self):
         super().run(host='0.0.0.0', use_reloader=False)
@@ -36,7 +35,7 @@ class Client(Flask):
 
         """
         data = {"owned_files": list(self.owned_files.keys()),
-                "available_files": list(self.network_files),
+                "network_files": list(self.network_files),
                 "connected": self.connected,
                 "tunnel": self.tunnel_nodes}
         return render_template("index.html", data=data)
