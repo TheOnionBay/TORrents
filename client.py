@@ -143,6 +143,7 @@ class Client(Flask):
         }
 
         r = requests.post("http://" + self.tunnel_nodes[0], json=message)
+        self.connected = True
         return "Connected to TheOnionBay. <a href='/'>Go back</a>"
 
     def send_payload(self, payload):
