@@ -39,6 +39,7 @@ class Node(Flask):
             {
                 "online": "Node online at {0}",
                 "incoming": "Incoming message from {0}",  # ip
+                "cid": "The message has CID {0}",
                 "unknownCID": "Received message with unknown CID {0}",
                 "add_to_relay": "Adding it to relay table with UpCID {0} and forward the message to next node at {1}",
                 # ip of other node
@@ -72,6 +73,7 @@ class Node(Flask):
 
         colour = choice(self.colours)
         self.cprint([from_ip], "incoming", colour)
+        self.cprint([message["CID"], "cid", colour])
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
             if self.fsid_exists(message["FSID"]):
