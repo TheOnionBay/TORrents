@@ -231,6 +231,7 @@ class Node(Flask):
 
     def cprint(self, args, id, colour):
         self.log += self.statements[id].format(*args)
+        self.log += "\n\n"
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
 
 
