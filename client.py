@@ -1,6 +1,7 @@
+import os
+import argparse
 import requests
 import json
-import argparse
 from flask import Flask, render_template, request
 from random import sample
 
@@ -11,7 +12,6 @@ from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size
 from common.encoding import json_to_bytes, bytes_to_json
-import os
 
 
 class Client(Flask):
@@ -22,15 +22,23 @@ class Client(Flask):
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/connect", "connect", self.conn, methods=["GET"])
         self.add_url_rule("/search", "search", self.search, methods=["POST"])
-        self.file_list = json.loads(filenames)
+        self.owned_file_list = json.loads(filenames)
+        self.file_list = []     # in the network
+        self.tunnel_nodes = []
+        self.connected = False
 
     def run(self):
         super().run(host='0.0.0.0', use_reloader=False)
 
     def index(self):
-        # Serve HTML page with input to request file
-        # Make a request for the available files to download, for now just passing a the same files of the client
-        return render_template("index.html", data=client.file_list)
+        """Serves HTML page with input to request file
+
+        """
+        data = {"owned_files": self.owned_file_list,
+                "available_files": self.file_list,
+                "connected": self.connected,
+                "tunnel": self.tunnel_nodes}
+        return render_template("index.html", data=data)
 
     def main_handler(self):
         """Client will receive comms from the tracker and files from other
@@ -135,7 +143,8 @@ class Client(Flask):
         }
 
         r = requests.post("http://" + self.tunnel_nodes[0], json=message)
-        return "Connected to network"
+        self.connected = True
+        return "Connected to TheOnionBay. <a href='/'>Go back</a>"
 
     def send_payload(self, payload):
         """Encrypts three times a message and send it to the tunnel. The

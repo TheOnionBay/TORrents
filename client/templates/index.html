@@ -14,44 +14,67 @@
    <body>
       <div class="container">
          <div class="row">
-            <form class="col s12 m6" action="/search" method="post">
-               <a href="/connect">
-                  <h1>TORrents</h1>
-               </a>
-               <div class="input-field">
-                  <input id="filename" type="text" name="filename">
-                  <label for="filename">Search TheOnionBay</label>
-               </div>
-               <button class="btn waves-effect waves-light" type="submit" name="action">Submit
-                  <i class="material-icons right">send</i>
+            <h1>TORrents</h1>
+            {% if data["connected"] %}
+            <p><i class="material-icons right">lock</i>Connected through:</p>
+            <ul>
+               {% for node in data["tunnel"] %}
+               <li>{{node}}</li>
+               {% endfor %}
+            </ul>
+            {% else %}
+            <a href="/connect">
+               <button class="btn waves-effect waves-light">Onion connect
+                  <i class="material-icons right">lock_open</i>
                </button>
-            </form>
+            </a>
+            {% endif %}
          </div>
-          <div class="row">
-              <table>
+         <div class="row">
+            <div class="col s6">
+               <h4>Seeding:</h4>
+               <table>
                   <thead>
-                  <tr>
-                      <th>Name</th>
-                      <th>Action</th>
-                  </tr>
+                     <tr>
+                        <th>Name</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     {% for file in data['files'] %}
+                     <tr>
+                        <td>{{file['name']}}</td>
+                     </tr>
+                     {% endfor %}
+                  </tbody>
+               </table>
+            </div>
+            <div class="col s6">
+               <h4>Available:</h4>
+               <table>
+                  <thead>
+                     <tr>
+                        <th>Name</th>
+                        <th>Action</th>
+                     </tr>
                   </thead>
 
                   <tbody>
-                  {% for file in data['files'] %}
-                  <tr>
-                      <td>{{file['name']}}</td>
-                      <td>
-                          <form class="col s12 m6" action="{{"/request/"+file['name']+""}}" method="post">
-                            <button class="btn waves-effect waves-light" type="submit" name="action">
-                            <i class="material-icons">file_download</i>
-                            </button>
-                          </form>
-                      </td>
-                  </tr>
-                  {% endfor %}
+                     {% for file in data['available_files'] %}
+                     <tr>
+                        <td>{{file['name']}}</td>
+                        <td>
+                           <form class="col s12 m6" action="/request" method="post">
+                              <button class="btn waves-effect waves-light" type="submit" name="action">
+                                 <i class="material-icons">file_download</i>
+                              </button>
+                           </form>
+                        </td>
+                     </tr>
+                     {% endfor %}
                   </tbody>
-              </table>
-          </div>
+               </table>
+            </div>
+         </div>
 
       </div>
 
