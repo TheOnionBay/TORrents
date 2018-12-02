@@ -1,5 +1,6 @@
 import os
 import requests
+from random import choice
 from flask import Flask, render_template, request, abort
 from common.network_info import cid_size
 from common.encoding import json_to_bytes, bytes_to_json
@@ -83,8 +84,8 @@ class Tracker(Flask):
 
         request_client_ip = self.peers[request_client_cid]
 
-        # Find the CID and IP of the client owning the requested file
-        owning_client_cid = self.files[file]
+        # Find the CID and IP of the first client owning the requested file
+        owning_client_cid = choice(self.files[file])
         owning_client_ip = self.peers[owning_client_cid]
 
         # Create the CID and FSID for this bridge
