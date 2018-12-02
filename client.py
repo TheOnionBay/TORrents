@@ -51,28 +51,18 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        print(msg)
         payload = self.decrypt_payload(msg["payload"])
         if payload["type"] == "request":
             return self.handle_request(payload)
-        elif payload["type"] == "file":
-            return self.handle_request_answer(payload)
         elif payload["type"] == "ls":
             print(payload)
             return "OK"
         else:
             return ("Unexpected payload type", 400)
 
-    def handle_request_answer(self, message):
-        file = message["file"]
-        data = message["data"]
-        self.file_list[0][file] = data
-        return "ok"
-
     def handle_request(self, message):
         file = message["file"]
         fsid = message["FSID"]
-
         d = {
             "type": "file",
             "file": file,
@@ -94,6 +84,10 @@ class Client(Flask):
             "file": file_name
         }
         self.send_payload(tracker_payload)
+        message = self.decrypt_payload(request.get_json()["payload"])
+        file = message["file"]
+        data = message["data"]
+        self.file_list[0][file] = data
         return (''), 204
 
     def select_nodes(self, node_pool):
