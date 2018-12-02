@@ -1,6 +1,7 @@
+import os
+import argparse
 import requests
 import json
-import argparse
 from flask import Flask, render_template, request
 from random import sample
 
@@ -11,7 +12,6 @@ from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size
 from common.encoding import json_to_bytes, bytes_to_json
-import os
 
 
 class Client(Flask):
