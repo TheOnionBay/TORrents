@@ -98,9 +98,12 @@ class Node(Flask):
 
         # If the message is a response from up to downstream
         elif message["CID"] in self.up_relay.keys():
+            print("The CID is known")
             if self.matching_cid_ip_from_up(message["CID"], from_ip):
+                print("The IP and CID IP match, so forwarding")
                 self.forward_downstream(message, colour)
             else:
+                print("not forwarding")
                 return "nok" #TODO throw error
         # We don't know the CID of the message, we assume it contains
         # an AES key
