@@ -84,26 +84,16 @@ class Node(Flask):
         # If the message is received from a bridge, and to be
         # transmitted down to the client
         elif message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
-            if self.bridgeCID_points_to_existing_downIP(message["CID"]):
-                self.receive_from_bridge(message, colour)
-            else:
-                return "nok" #TODO throw error
+            self.receive_from_bridge(message, colour)
 
         # If the message is a normal message from down to upstream
         elif message["CID"] in self.down_relay.keys():
-            if self.matching_cid_ip_from_down(message["CID"], from_ip):
-                self.forward_upstream(message, colour)
-            else:
-                return "nok"  #TODO throw error
+            self.forward_upstream(message, colour)
 
         # If the message is a response from up to downstream
         elif message["CID"] in self.up_relay.keys():
-            print("Up relay:", self.up_relay)
-            print("To compare:", from_ip)
-            if self.matching_cid_ip_from_up(message["CID"], from_ip):
-                self.forward_downstream(message, colour)
-            else:
-                return "nok" #TODO throw error
+            self.forward_downstream(message, colour)
+
         # We don't know the CID of the message, we assume it contains
         # an AES key
         else:
