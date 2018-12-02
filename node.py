@@ -74,21 +74,32 @@ class Node(Flask):
         self.cprint([from_ip], "incoming", colour)
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
-            self.transmit_to_bridge(message, colour)
+            if self.fsid_exists(message["FSID"]):
+                self.transmit_to_bridge(message, colour)
+            else:
+                return "nok" #TODO throw error
 
         # If the message is received from a bridge, and to be
         # transmitted down to the client
         elif message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
-            self.receive_from_bridge(message, colour)
+            if self.bridgeCID_points_to_existing_downIP(message["CID"]):
+                self.receive_from_bridge(message, colour)
+            else:
+                return "nok" #TODO throw error
 
         # If the message is a normal message from down to upstream
         elif message["CID"] in self.relay.indices["DownCID"]:
-            self.forward_upstream(message, colour)
+            if self.matching_cid_ip_from_down(message["CID"],from_ip):
+                self.forward_upstream(message, colour)
+            else:
+                return "nok"  #TODO throw error
 
         # If the message is a response from up to downstream
         elif message["CID"] in self.relay.indices["UpCID"]:
-            self.forward_downstream(message, colour)
-
+            if self.matching_cid_ip_from_up(message["CID"],from_ip):
+                self.forward_downstream(message, colour)
+            else:
+                return "nok" #TODO throw error
         # We don't know the CID of the message, we assume it contains
         # an AES key
         else:
@@ -114,11 +125,20 @@ class Node(Flask):
                 return "ok"
         return "nok"
 
-    def transmit_to_bridge(self, message, colour):
-        if message["FSID"] not in self.up_file_transfer.indices["FSID"]:
-            # We don't have file sharing data about this FSID
-            return  # TODO Throw an error
+    def matching_cid_ip_from_down(self, cid, fromip):
+        return fromip == self.relay["DownCID":cid, "DownIP"]
 
+    def matching_cid_ip_from_up(self, cid, fromip):
+        return fromip == self.relay["UpCID":cid, "UpIP"]
+
+    def bridgeCID_points_to_existing_downIP(self,bridgeCID):
+        down_cid = self.down_file_transfer["BridgeCID": bridgeCID, "DownCID"]
+        return down_cid in self.relay.indices["DownCID"]
+
+    def fsid_exists(self,fsid):
+        return fsid in self.up_file_transfer.indices["FSID"]
+
+    def transmit_to_bridge(self, message, colour):
         bridge_ip, bridge_cid = self.up_file_transfer["FSID": message["FSID"], ("BridgeIP", "BridgeCID")]
         self.cprint([message["FSID"], bridge_ip], "transmit_to_bridge", colour)
 
@@ -137,24 +157,20 @@ class Node(Flask):
 
     def receive_from_bridge(self, message, colour):
         down_cid = self.down_file_transfer["BridgeCID": message["CID"], "DownCID"]
-        try:
-            down_ip, sess_key = self.relay["DownCID": down_cid, "DownIP"]
 
-            self.cprint([message["CID"], down_ip], "receive_from_bridge", colour)
+        down_ip, sess_key = self.relay["DownCID": down_cid, "DownIP"]
 
-            new_message = {
-                "CID": down_cid,
-                # Encrypt the message when sending downstream, we
-                # received it as encoded plaintext
-                "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
-            }
-            requests.post("http://" + down_ip, json=new_message)
-            return "ok"
+        self.cprint([message["CID"], down_ip], "receive_from_bridge", colour)
 
-        except KeyError:
-            # If we don't have a downstream CID matching in the relay
-            # table
-            return  # TODO throw an error
+        new_message = {
+            "CID": down_cid,
+            # Encrypt the message when sending downstream, we
+            # received it as encoded plaintext
+            "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
+        }
+        requests.post("http://" + down_ip, json=new_message)
+        return "ok"
+
 
     def forward_upstream(self, message, colour):
         up_cid, up_ip, sess_key = self.relay["DownCID": message["CID"], ("UpCID", "UpIP", "SessKey")]
