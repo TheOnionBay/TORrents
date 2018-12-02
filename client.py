@@ -21,7 +21,7 @@ class Client(Flask):
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/connect", "connect", self.conn, methods=["GET"])
-        self.add_url_rule("/search", "search", self.search, methods=["POST"])
+        self.add_url_rule("/request", "request", self.request, methods=["POST"])
         self.owned_files = json.loads(filenames)
         self.network_files = set()
         self.tunnel_nodes = []
@@ -40,7 +40,7 @@ class Client(Flask):
                 "tunnel": self.tunnel_nodes}
         return render_template("index.html", data=data)
 
-    def search(self):
+    def request(self):
         """Asks the tracker for the filename given in the UI form."""
         file_name = request.form["filename"] or ""
         print("Requesting file ", file_name)
