@@ -73,7 +73,7 @@ class Node(Flask):
 
         colour = choice(self.colours)
         self.cprint([from_ip], "incoming", colour)
-        self.cprint([message["CID"], "cid", colour])
+        self.cprint([message["CID"]], "cid", colour)
         # If the message is a file to be transmitted to a bridge
         if "FSID" in message:
             if self.fsid_exists(message["FSID"]):
