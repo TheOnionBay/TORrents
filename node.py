@@ -230,7 +230,7 @@ class Node(Flask):
         self.down_file_transfer[bridge_cid] = (down_cid)
 
     def cprint(self, args, id, colour):
-        self.log += Back.BLACK + colour + self.statements[id].format(*args)
+        self.log += self.statements[id].format(*args)
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
 
 
