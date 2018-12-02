@@ -22,8 +22,8 @@ class Client(Flask):
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/connect", "connect", self.conn, methods=["GET"])
         self.add_url_rule("/search", "search", self.search, methods=["POST"])
-        self.owned_file_list = json.loads(filenames)
-        self.file_list = []     # in the network
+        self.owned_files = json.loads(filenames)
+        self.network_files = set()
         self.tunnel_nodes = []
         self.connected = False
 
@@ -31,14 +31,24 @@ class Client(Flask):
         super().run(host='0.0.0.0', use_reloader=False)
 
     def index(self):
-        """Serves HTML page with input to request file
+        """Serves HTML page with input to request file.
 
         """
-        data = {"owned_files": self.owned_file_list,
-                "available_files": self.file_list,
+        data = {"owned_files": list(self.owned_files.keys()),
+                "network_files": list(self.network_files),
                 "connected": self.connected,
                 "tunnel": self.tunnel_nodes}
         return render_template("index.html", data=data)
+
+    def search(self):
+        """Asks the tracker for the filename given in the UI form."""
+        file_name = request.form["filename"] or ""
+        print("Requesting file ", file_name)
+        tracker_payload = {
+            "type": "request",
+            "file": file_name
+        }
+        self.send_payload(tracker_payload)
 
     def main_handler(self):
         """Client will receive comms from the tracker and files from other
@@ -51,50 +61,38 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        print(msg)
         payload = self.decrypt_payload(msg["payload"])
         if payload["type"] == "request":
             return self.handle_request(payload)
         elif payload["type"] == "file":
-            return self.handle_request_answer(payload)
+            return self.handle_receive_file(payload)
         elif payload["type"] == "ls":
-            print(payload)
-            return "OK"
+            return self.handle_network_ls(payload["files"])
         else:
             return ("Unexpected payload type", 400)
 
-    def handle_request_answer(self, message):
-        file = message["file"]
-        data = message["data"]
-        self.file_list[0][file] = data
-        return "ok"
-
     def handle_request(self, message):
-        file = message["file"]
-        fsid = message["FSID"]
+        filename = message["file"]
+        if filename not in self.owned_files:
+            # We don't have the file, error 404 not found
+            return ("File request can't be fulfilled, we don't have file " + filename, 404)
 
-        d = {
+        response = {
             "type": "file",
-            "file": file,
-            "data": self.file_list[0][file],
-            "FSID": fsid
+            "file": filename,
+            "data": self.owned_files[filename],
+            "FSID": message["FSID"]
         }
-        # Unencrypt request with keys available, max 3 times !
-        self.send_payload(d)
+        self.send_payload(response)
         return "ok"
 
-    def search(self):
-        """Asks the tracker for the filename given in the UI form
+    def handle_receive_file(self, payload):
+        self.owned_files[payload["file"]] = payload["data"]
+        return "ok"
 
-        """
-        file_name = request.form["filename"] or ""
-        print("Request File: ", file_name)
-        tracker_payload = {
-            "type": "request",
-            "file": file_name
-        }
-        self.send_payload(tracker_payload)
-        return (''), 204
+    def handle_network_ls(self, files):
+        self.network_files.update(files)
+        return "ok"
 
     def select_nodes(self, node_pool):
         """Selects 3 unique public nodes from the available pool."""
@@ -112,7 +110,7 @@ class Client(Flask):
 
         tracker_payload = {
             "type": "ls",
-            "files": self.file_list
+            "files": list(self.owned_files.keys())
         }
 
         payloadZ = {
@@ -142,7 +140,7 @@ class Client(Flask):
             "payload": aes_encrypt(json_to_bytes(payloadX), self.sesskeys[0]).hex()
         }
 
-        r = requests.post("http://" + self.tunnel_nodes[0], json=message)
+        requests.post("http://" + self.tunnel_nodes[0], json=message)
         self.connected = True
         return "Connected to TheOnionBay. <a href='/'>Go back</a>"
 
@@ -163,11 +161,11 @@ class Client(Flask):
             "payload": payload.hex()
         }
 
-        r = requests.post("http://" + self.tunnel_nodes[0], json=message)
+        requests.post("http://" + self.tunnel_nodes[0], json=message)
 
     def decrypt_payload(self, payload):
         """Peels 3 layers from the payload. Opposite routine to
-        self.encrypt_payload
+        self.encrypt_payload.
 
         """
         payload = bytes.fromhex(payload)

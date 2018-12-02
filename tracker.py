@@ -12,9 +12,9 @@ class Tracker(Flask):
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
 
-        self.files = {"movie1": "cid1",
-                      "movie2": "cid2",
-                      "movie3": "cid3"}
+        self.files = {"movie1": ["cid1"],
+                      "movie2": ["cid2"],
+                      "movie3": ["cid3"]}
 
         self.peers = {"cid1": "IP1",
                       "cid2": "IP2"}
@@ -39,18 +39,17 @@ class Tracker(Flask):
         payload = bytes_to_json(bytes.fromhex(message["payload"]))
 
         # A new client connects to the network by sending the list of
-        # files
+        # files it has
         from_ip = request.remote_addr + ":5000"
         if payload["type"] == "ls":
             return self.handle_new_client(message["CID"], from_ip, payload["files"])
 
         # A client sends a file request, this is the only other
         # possibility
-        else:
-            if payload["type"] != "request":
-                return ("Unexpected payload type", 400)
-
+        elif payload["type"] == "request":
             return self.handle_file_request(message["CID"], payload["file"])
+        else:
+            return ("Unexpected payload type: " + payload["type"], 400)
 
     def handle_new_client(self, cid, ip, files):
         """Registers a new client by remembering the CID and IP of the exit
@@ -60,9 +59,9 @@ class Tracker(Flask):
         self.peers[cid] = ip
 
         for file in files:
-            self.files[file["name"]] = cid
+            self.files.setdefault(file, []).append(cid)
 
-        # Send back the list of files
+        # Send back the list of files we have in the network
         response = {
             "CID": cid,
             "payload": json_to_bytes({
