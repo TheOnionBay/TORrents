@@ -3,3 +3,12 @@ os: linux
 files:
   - source: /
     destination: /home/ubuntu/TORrents/
+hooks:
+  ApplicationStart:
+    - location: scripts/start_service
+      timeout: 300
+      runas: ubuntu
+  ApplicationStop:
+    - location: scripts/stop_service
+      timeout: 300
+      runas: ubuntu
