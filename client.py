@@ -153,7 +153,7 @@ class Client(Flask):
 
         # Encrypt in the reverse order, the closest node (first in the
         # list) decrypts first
-        for node, sesskey in reversed(zip(self.tunnel_nodes, self.sesskeys)):
+        for node, sesskey in reversed(list(zip(self.tunnel_nodes, self.sesskeys))):
             payload = aes_encrypt(payload, sesskey)
 
         message = {
