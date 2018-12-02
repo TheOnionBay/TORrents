@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, render_template, jsonify, request, abort
+from flask import Flask, render_template, request, abort
 from common.network_info import cid_size
 from common.encoding import json_to_bytes, bytes_to_json
 from crypto.random_bytes import generate_bytes
@@ -28,15 +28,24 @@ class Tracker(Flask):
                                      "peers": self.peers})
 
     def main_handler(self):
+        """The main handler can get two types of requests:
+
+        1) a message containing the list of files a client has
+
+        2) a message containing a request for a certain file.
+
+        """
         message = request.get_json()
         payload = bytes_to_json(bytes.fromhex(message["payload"]))
 
-        # A new client connects to the network by sending the list of files
+        # A new client connects to the network by sending the list of
+        # files
         from_ip = request.remote_addr + ":5000"
         if payload["type"] == "ls":
             return self.handle_new_client(message["CID"], from_ip, payload["files"])
 
-        # A client sends a file request, this is the only other possibility
+        # A client sends a file request, this is the only other
+        # possibility
         else:
             if payload["type"] != "request":
                 return ("Unexpected payload type", 400)
@@ -44,14 +53,12 @@ class Tracker(Flask):
             return self.handle_file_request(message["CID"], payload["file"])
 
     def handle_new_client(self, cid, ip, files):
+        """Registers a new client by remembering the CID and IP of the exit
+        node, and send back the list of available files.
+
         """
-        Registers a new client by remembering the CID and IP of the exit node,
-        and send back the list of available files.
-        """
-        # Add the IP address
         self.peers[cid] = ip
 
-        # Add the list of files
         for file in files:
             self.files[file["name"]] = cid
 
@@ -68,9 +75,9 @@ class Tracker(Flask):
         return "ok"
 
     def handle_file_request(self, request_client_cid, file):
-        """
-        Checks availability of the requested file and creates a bridge if
+        """Checks availability of the requested file and creates a bridge if
         available.
+
         """
         if file not in self.files:
             abort(404)
@@ -116,6 +123,7 @@ class Tracker(Flask):
         }
         requests.post("http://" + request_client_ip, json=request_message)
         return "ok"
+
 
 tracker = Tracker()
 tracker.run(host='0.0.0.0', use_reloader=False)

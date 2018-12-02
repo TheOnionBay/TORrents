@@ -11,10 +11,11 @@ from crypto import aes_common
 from crypto.random_bytes import generate_bytes
 from crypto.rsa import rsa_decrypt
 
-from colorama import Fore, Back, Style
+from colorama import Fore, Back
 import colorama
 import sys
 from random import choice
+
 
 class Node(Flask):
 
@@ -35,24 +36,22 @@ class Node(Flask):
                 "online": "Node online at {0}",
                 "incoming": "Incoming message from {0}",  # ip
                 "unknownCID": "Received message with unknown CID {0}",
-                "addToRelay": "Adding it to relay table with UpCID {0} and forward the message to next node at {1}",
+                "add_to_relay": "Adding it to relay table with UpCID {0} and forward the message to next node at {1}",
                 # ip of other node
                 "forward": "CID = {0}, forwarding it {1} to {2}",  # cid , direction up/downstream ,ip of other node
                 "receive_from_bridge": "Message from bridge CID {0}, forwarding it downstream to {1}",
                 "transmit_to_bridge": "Transfer of file {0}, transmitting it to bridge at {1}",  # fsid, bridge ip
                 "fromTracker": "Message from tracker at {0}",  # ip of tracker
                 "make_bridge": "Creating bridge for {0} with CID {1} for the future file transfer of file {3}",
-            # ip, cid,direction,fsid
+                # ip, cid,direction,fsid
                 "receive_bridge": "Creating bridge entry for the future downstream file transfer of a file to {0} with CID {1}",
-            # ip, cid
-
+                # ip, cid
             }
         # self.cprint(.format(ip),Fore.GREEN)
 
     def run(self):
         self.cprint([self.ip], "online", Fore.GREEN)
         super().run(host='0.0.0.0', use_reloader=False)
-
 
     def main_handler(self):
         print(self.relay)
@@ -87,10 +86,11 @@ class Node(Flask):
 
         return "ok"
 
-
     def control_handler(self):
-        """Tracker control messages will arrive here."""
-        # Read message, update table accordingly
+        """Tracker control messages will arrive here. The table is update
+        accordingly
+
+        """
         message = request.get_json()
         from_ip = request.remote_addr + ":5000"
         if from_ip == tracker:
@@ -201,7 +201,7 @@ class Node(Flask):
         if "aes_key" in payload:
             new_message["aes_key"] = payload["aes_key"]
 
-        self.cprint([up_cid,payload["to"]], "addToRelay")
+        self.cprint([up_cid, payload["to"]], "add_to_relay")
         requests.post("http://" + payload["to"], json=new_message)
         return "ok"
 
@@ -222,8 +222,8 @@ class Node(Flask):
 
 
 parser = argparse.ArgumentParser(description='TORrent node')
-# We need the IP of the node so that it can find its own private RSA key in
-# common/network_info.py
+# We need the IP of the node so that it can find its own private RSA
+# key in the network info files.
 parser.add_argument('ip', type=str, help='ip address of the node')
 args = parser.parse_args()
 colorama.init()

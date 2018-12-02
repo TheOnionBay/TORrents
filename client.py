@@ -4,7 +4,7 @@ import argparse
 from flask import Flask, render_template, request
 from random import sample
 
-from crypto.rsa import rsa_encrypt, rsa_decrypt
+from crypto.rsa import rsa_encrypt
 from crypto.random_bytes import generate_bytes
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
@@ -20,11 +20,11 @@ class Client(Flask):
         super().__init__(name, template_folder=os.path.abspath('client/templates'))
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
+        self.add_url_rule("/connect", "connect", self.conn, methods=["GET"])
         self.add_url_rule("/search", "search", self.search, methods=["POST"])
         self.file_list = json.loads(filenames)
 
     def run(self):
-        self.conn()
         super().run(host='0.0.0.0', use_reloader=False)
 
     def index(self):
@@ -32,22 +32,28 @@ class Client(Flask):
         # Make a request for the available files to download, for now just passing a the same files of the client
         return render_template("index.html", data=client.file_list)
 
-
     def main_handler(self):
         """Client will receive comms from the tracker and files from other
-        peers on this handler. The client can receive two types of messages:
+        peers on this handler. The client can receive two types of
+        messages:
+
         * The list of files in the network
+
         * A request for a sharing a file
+
         """
         msg = request.get_json()
-        if msg["type"] == "request":
-            return self.handle_request(msg)
-        elif msg["type"] == "file":
-            return self.handle_request_answer(msg)
+        print(msg)
+        payload = self.decrypt_payload(msg["payload"])
+        if payload["type"] == "request":
+            return self.handle_request(payload)
+        elif payload["type"] == "file":
+            return self.handle_request_answer(payload)
+        elif payload["type"] == "ls":
+            print(payload)
+            return "OK"
         else:
             return ("Unexpected payload type", 400)
-
-        #print("yoyo main handler:", request.get_json())
 
     def handle_request_answer(self, message):
         file = message["file"]
@@ -66,12 +72,13 @@ class Client(Flask):
             "FSID": fsid
         }
         # Unencrypt request with keys available, max 3 times !
-        #pass
-        send_payload(d)
+        self.send_payload(d)
         return "ok"
 
     def search(self):
-        # Get filename wanted
+        """Asks the tracker for the filename given in the UI form
+
+        """
         file_name = request.form["filename"] or ""
         print("Request File: ", file_name)
         tracker_payload = {
@@ -82,12 +89,13 @@ class Client(Flask):
         return (''), 204
 
     def select_nodes(self, node_pool):
-        """Selects 3 public nodes from the available pool."""
+        """Selects 3 unique public nodes from the available pool."""
         return sample(node_pool, 3)
 
     def conn(self):
         """Connects to the torrent network, uploading the list of files this
         client has.
+
         """
         self.tunnel_nodes = self.select_nodes(node_pool)
         print("I CHOSE: ", self.tunnel_nodes)
@@ -127,14 +135,17 @@ class Client(Flask):
         }
 
         r = requests.post("http://" + self.tunnel_nodes[0], json=message)
+        return "Connected to network"
 
     def send_payload(self, payload):
-        """Encrypts three times a message and send it to the tunnel.
-        The tunnel has to be established beforehand.
+        """Encrypts three times a message and send it to the tunnel. The
+        tunnel has to be established beforehand.
+
         """
         payload = json_to_bytes(payload)
 
-        # Encrypt in the reverse order, the closest node (first in the list) decrypts first
+        # Encrypt in the reverse order, the closest node (first in the
+        # list) decrypts first
         for node, sesskey in reversed(zip(self.tunnel_nodes, self.sesskeys)):
             payload = aes_encrypt(payload, sesskey)
 
@@ -145,14 +156,17 @@ class Client(Flask):
 
         r = requests.post("http://" + self.tunnel_nodes[0], json=message)
 
-    def client_loop(self):
-        """This function makes the client interactive and puts the terminal in
-        a read-eval loop where the input + newline is considered the file
-        this client is requesting to the tracker/torrent
+    def decrypt_payload(self, payload):
+        """Peels 3 layers from the payload. Opposite routine to
+        self.encrypt_payload
+
         """
-        # read eval loop from stdin
-        # send request
-        pass
+        payload = bytes.fromhex(payload)
+        for node, sesskey in zip(self.tunnel_nodes, self.sesskeys):
+            payload = aes_decrypt(payload, sesskey)
+
+        payload = bytes_to_json(payload)
+        return payload
 
 
 parser = argparse.ArgumentParser(description='TORrent client')
