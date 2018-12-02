@@ -26,7 +26,8 @@ class Node(Flask):
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/control/", "control_handler", self.control_handler, methods=["POST"])
         self.private_key = private_keys[ip]
-        self.relay = MIDict([], ["DownIP", "DownCID", "SessKey", "UpIP", "UpCID"])
+        self.up_relay = {}
+        self.down_relay = {}
         self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
         self.down_file_transfer = MIDict([], ["BridgeCID", "DownCID"])
 
@@ -65,7 +66,6 @@ class Node(Flask):
         return render_template("index.html", data=data)
 
     def main_handler(self):
-        print(self.relay)
         message = request.get_json()
         print(message)
         from_ip = request.remote_addr + ":5000"
@@ -88,15 +88,15 @@ class Node(Flask):
                 return "nok" #TODO throw error
 
         # If the message is a normal message from down to upstream
-        elif message["CID"] in self.relay.indices["DownCID"]:
-            if self.matching_cid_ip_from_down(message["CID"],from_ip):
+        elif message["CID"] in self.down_relay.keys():
+            if self.matching_cid_ip_from_down(message["CID"], from_ip):
                 self.forward_upstream(message, colour)
             else:
                 return "nok"  #TODO throw error
 
         # If the message is a response from up to downstream
-        elif message["CID"] in self.relay.indices["UpCID"]:
-            if self.matching_cid_ip_from_up(message["CID"],from_ip):
+        elif message["CID"] in self.up_relay.keys():
+            if self.matching_cid_ip_from_up(message["CID"], from_ip):
                 self.forward_downstream(message, colour)
             else:
                 return "nok" #TODO throw error
@@ -126,14 +126,14 @@ class Node(Flask):
         return "nok"
 
     def matching_cid_ip_from_down(self, cid, fromip):
-        return fromip == self.relay["DownCID":cid, "DownIP"]
+        return fromip == self.down_relay[cid]["DownIP"]
 
     def matching_cid_ip_from_up(self, cid, fromip):
-        return fromip == self.relay["UpCID":cid, "UpIP"]
+        return fromip == self.up_relay[cid]["UpCID"]
 
     def bridgeCID_points_to_existing_downIP(self,bridgeCID):
         down_cid = self.down_file_transfer["BridgeCID": bridgeCID, "DownCID"]
-        return down_cid in self.relay.indices["DownCID"]
+        return down_cid in self.down_relay.keys()
 
     def fsid_exists(self,fsid):
         return fsid in self.up_file_transfer.indices["FSID"]
@@ -158,7 +158,8 @@ class Node(Flask):
     def receive_from_bridge(self, message, colour):
         down_cid = self.down_file_transfer["BridgeCID": message["CID"], "DownCID"]
 
-        down_ip, sess_key = self.relay["DownCID": down_cid, "DownIP"]
+        down_ip = self.down_relay[down_cid]["DownIP"]
+        sess_key = self.down_relay[down_cid]["SessKey"]
 
         self.cprint([message["CID"], down_ip], "receive_from_bridge", colour)
 
@@ -173,7 +174,10 @@ class Node(Flask):
 
 
     def forward_upstream(self, message, colour):
-        up_cid, up_ip, sess_key = self.relay["DownCID": message["CID"], ("UpCID", "UpIP", "SessKey")]
+        up_cid = self.down_relay[message["CID"]]["UpCID"]
+        up_ip = self.down_relay[message["CID"]]["UpIP"]
+        sess_key = self.down_relay[message["CID"]]["SessKey"]
+
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
             "CID": up_cid,
@@ -184,7 +188,10 @@ class Node(Flask):
         return "ok"
 
     def forward_downstream(self, message, colour):
-        down_cid, down_ip, sess_key = self.relay["UpCID": message["CID"], ("DownCID", "DownIP", "SessKey")]
+        down_cid = self.up_relay[message["CID"]]["DownCID"]
+        down_ip = self.up_relay[message["CID"]]["DownIP"]
+        sess_key = self.up_relay[message["CID"]]["SessKey"]
+
 
         self.cprint([message["CID"], "downstream", down_ip], "forward", colour)
 
@@ -217,9 +224,16 @@ class Node(Flask):
         up_cid = generate_bytes(cid_size).hex()
 
         self.cprint([message["CID"]], "unknownCID", colour)
-        # Add a line to the relay table
-        self.relay[:, ("DownIP", "DownCID", "SessKey", "UpIP", "UpCID")] = \
-            (request.remote_addr + ":5000", message["CID"], sess_key, payload["to"], up_cid)
+        # Add info to the relay tables
+        self.down_relay[message["CID"]] = {"DownIP": request.remote_addr + ":5000",
+                                           "SessKey": sess_key,
+                                           "UpCID": up_cid,
+                                           "UpIP": payload["to"]}
+
+        self.up_relay[up_cid] = {"DownCID": message["CID"],
+                                 "DownIP": request.remote_addr + ":5000",
+                                 "SessKey": sess_key,
+                                 "UpIP": payload["to"]}
 
         # Forward the payload to the next node upstream
         new_message = {
@@ -240,7 +254,8 @@ class Node(Flask):
         self.up_file_transfer[fsid] = (bridge_cid, bridge_ip)
 
     def receive_bridge(self, bridge_cid, origin_cid, colour):
-        down_cid, down_ip = self.relay["UpCID": origin_cid, ("DownCID", "DownIP")]
+        down_cid = self.up_relay[origin_cid]["DownCID"]
+        down_ip = self.up_relay[origin_cid]["DownIP"]
 
         self.cprint([down_ip, down_cid], "receive_bridge", colour)
         self.down_file_transfer[bridge_cid] = (down_cid)
