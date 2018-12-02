@@ -129,7 +129,7 @@ class Node(Flask):
         return fromip == self.down_relay[cid]["DownIP"]
 
     def matching_cid_ip_from_up(self, cid, fromip):
-        return fromip == self.up_relay[cid]["UpCID"]
+        return fromip == self.up_relay[cid]["UpIP"]
 
     def bridgeCID_points_to_existing_downIP(self,bridgeCID):
         down_cid = self.down_file_transfer["BridgeCID": bridgeCID, "DownCID"]
