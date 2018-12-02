@@ -135,7 +135,7 @@ class Client(Flask):
         }
 
         r = requests.post("http://" + self.tunnel_nodes[0], json=message)
-        return "Connected to network"
+        return render_template("simple.html", data={"nodes": self.tunnel_nodes})
 
     def send_payload(self, payload):
         """Encrypts three times a message and send it to the tunnel. The
