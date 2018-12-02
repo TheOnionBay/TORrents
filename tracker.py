@@ -13,12 +13,9 @@ class Tracker(Flask):
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
 
-        self.files = {"movie1": ["cid1"],
-                      "movie2": ["cid2"],
-                      "movie3": ["cid3"]}
+        self.files = {}
 
-        self.peers = {"cid1": "IP1",
-                      "cid2": "IP2"}
+        self.peers = {}
 
         self.fsid_counter = 0
 
