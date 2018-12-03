@@ -16,12 +16,24 @@
          <div class="row">
             <h1>TORrents client</h1>
             {% if data["connected"] %}
-            <p><i class="material-icons right">lock</i>Connected through:</p>
-            <ul>
-               {% for node in data["tunnel"] %}
-               <li>{{node}}</li>
-               {% endfor %}
-            </ul>
+            <p><i class="material-icons right">lock</i>Connection tunnel:</p>
+            <nav>
+                <div class="nav-wrapper">
+                    <div class="col s12">
+                       <a href="#!" class="breadcrumb">
+                           You
+                       </a>
+                       {% for node in data["tunnel"] %}
+                        <a href="{{node}}" class="breadcrumb">
+                            {{node}}
+                        </a>
+                        {% endfor %}
+                         <a href="theonionbay.club" class="breadcrumb">
+                             Tracker
+                         </a>
+                     </div>
+                </div>
+            </nav>
             {% else %}
             <a href="/connect">
                <button class="btn waves-effect waves-light">Onion connect

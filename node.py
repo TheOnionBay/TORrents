@@ -46,7 +46,7 @@ class Node(Flask):
                 "forward": "CID = {0}, forwarding it {1} to {2}",  # cid , direction up/downstream ,ip of other node
                 "receive_from_bridge": "Message from bridge CID {0}, forwarding it downstream to {1}",
                 "transmit_to_bridge": "Transfer of file {0}, transmitting it to bridge at {1}",  # fsid, bridge ip
-                "fromTracker": "\n ###!!!### Message from tracker at {0}",  # ip of tracker
+                "fromTracker": "\n Control message from tracker at {0}",  # ip of tracker
                 "make_bridge": "Creating bridge for {0} with CID {1} for the future file transfer of file {3}",
                 # ip, cid,direction,fsid
                 "receive_bridge": "Creating bridge entry for the future downstream file transfer of a file to {0} with CID {1}",
