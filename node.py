@@ -177,9 +177,9 @@ class Node(Flask):
             # No decoding exception, the payload was a valid JSON once
             # decoded.
 
-            #Two possibilities here: the payload is for a bridge or
+            # Two possibilities here: the payload is for a bridge or
             # for the tracker
-            if "FSID" in payload:
+            if "FSID" in decoded_payload:
                 return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
         except:
