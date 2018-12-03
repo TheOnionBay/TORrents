@@ -171,25 +171,21 @@ class Node(Flask):
         payload = aes_decrypt(bytes.fromhex(message["payload"]), sess_key)
 
         # Try to decode the payload
-        #try:
-            #decoded_payload = bytes_to_json(payload)
+        try:
+            decoded_payload = bytes_to_json(payload)
             # No decoding exception, the payload was a valid JSON once
             # decoded.
 
             #Two possibilities here: the payload is for a bridge or
             # for the tracker
-            #if "FSID" in payload:
-                #return self.transmit_to_bridge(decoded_payload, colour)
+            if "FSID" in payload:
+                return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
-        #except:
+        except:
             # A decoding exception occurred, just forward upstream
-            #pass
-
-        print("MEssage: ", message)
-        print("Decrypted payload:", payload)
-        if "FSID" in payload:
-            decoded_payload = bytes_to_json(payload)
-            return self.transmit_to_bridge(decoded_payload, colour)
+            print("Unexpected error:", sys.exc_info()[0])
+            print("MEssage: ", message)
+            print("Decrypted payload:", payload)
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
