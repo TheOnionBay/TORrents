@@ -35,7 +35,7 @@ class Client(Flask):
 
         """
         data = {
-            "owned_files": list(self.owned_files.keys()),
+            "owned_files": self.owned_files,
             "network_files": list(self.network_files),
             "connected": self.connected,
             "tunnel": [domain_names[node] for node in self.tunnel_nodes]
