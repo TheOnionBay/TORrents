@@ -1,9 +1,7 @@
-import traceback
 import os
 import argparse
 import requests
 from flask import Flask, request, render_template
-from midict import MIDict
 import json
 
 from common.encoding import bytes_to_json, json_to_bytes

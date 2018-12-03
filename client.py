@@ -4,7 +4,6 @@ import requests
 import json
 from flask import Flask, render_template, request, redirect
 from random import sample
-import sys
 
 from common.hash import hash_payload
 from crypto.rsa import rsa_encrypt, rsa_decrypt
@@ -15,9 +14,11 @@ from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size, get_url, domain_names
 from common.encoding import json_to_bytes, bytes_to_json
 
+
 class SignatureNotMatching(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
+
 
 class Client(Flask):
 
