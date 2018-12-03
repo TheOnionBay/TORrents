@@ -74,11 +74,13 @@ class Node(Flask):
         self.cprint([from_ip], "incoming", colour)
         self.cprint([message["CID"]], "cid", colour)
 
-        # If the message is received from a bridge, and to be transmitted down to the client
+        # If the message is received from a bridge, and to be
+        # transmitted down to the client
         if message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
             return self.receive_from_bridge(message, colour)
 
-        # If the message is a normal message from down to upstream or to a bridge
+        # If the message is a normal message from down to upstream or
+        # to a bridge
         elif message["CID"] in self.down_relay.keys():
             return self.forward_upstream(message, colour)
 
@@ -86,7 +88,8 @@ class Node(Flask):
         elif message["CID"] in self.up_relay.keys():
             return self.forward_downstream(message, colour)
 
-        # We don't know the CID of the message, we assume it contains an AES key
+        # We don't know the CID of the message, we assume it contains
+        # an AES key
         elif "aes_key" in message:
             return self.create_tunnel(message, colour)
 
@@ -168,16 +171,22 @@ class Node(Flask):
         payload = aes_decrypt(bytes.fromhex(message["payload"]), sess_key)
 
         # Try to decode the payload
-        try:
-            decoded_payload = bytes_to_json(payload)
-            # No decoding exception, the payload was a valid JSON once decoded
-            # Two possibilities here: the payload is for a bridge or for the tracker
-            if "FSID" in payload:
-                return self.transmit_to_bridge(decoded_payload, colour)
+        #try:
+            #decoded_payload = bytes_to_json(payload)
+            # No decoding exception, the payload was a valid JSON once
+            # decoded.
+
+            #Two possibilities here: the payload is for a bridge or
+            # for the tracker
+            #if "FSID" in payload:
+                #return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
-        except:
+        #except:
             # A decoding exception occurred, just forward upstream
-            pass
+            #pass
+
+        decoded_payload = bytes_to_json(payload)
+        return self.transmit_to_bridge(decoded_payload, colour)
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
