@@ -12,7 +12,7 @@ def file_to_payload(file_path):
     res = ""
     with open(file_path, 'r') as file:
         for line in file:
-            res += line+R'\n'
+            res += line.strip('\n')+R'\n'
     return res
 
 def payload_to_file(file_path, payload):
