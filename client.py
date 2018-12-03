@@ -249,7 +249,10 @@ class Client(Flask):
         payloadY = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadZ.hex()}), self.sesskeys[1])
         payloadX = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadY.hex()}), self.sesskeys[0])
 
-        self.send_payload(payloadX)
+        requests.post(get_url(self.tunnel_nodes[0]), json={
+            "CID": self.cid,
+            "payload": payloadX.hex()
+        })
         self.connected = False
         return redirect("/")
 
