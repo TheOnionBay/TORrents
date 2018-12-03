@@ -9,6 +9,11 @@
 
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
       <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <style>
+       .breadcrumb:before {
+         vertical-align: middle;
+       }
+      </style>
    </head>
 
    <body>
@@ -17,23 +22,21 @@
             <h1>TORrents client</h1>
             {% if data["connected"] %}
             <p><i class="material-icons right">lock</i>Connection tunnel:</p>
-            <nav>
-                <div class="nav-wrapper">
-                    <div class="col s12">
-                       <a href="#!" class="breadcrumb">
-                           You
-                       </a>
-                       {% for node in data["tunnel"] %}
-                        <a href="{{node}}" class="breadcrumb">
-                            {{node}}
-                        </a>
-                        {% endfor %}
-                         <a href="theonionbay.club" class="breadcrumb">
-                             Tracker
-                         </a>
-                     </div>
-                </div>
-            </nav>
+            <div class="card">
+               <div class="card-content white-text">
+                  <a href="#!" class="white-text breadcrumb">
+                     You
+                  </a>
+                  {% for node in data["tunnel"] %}
+                  <a target="_blank" href="http://{{node}}" class="white-text breadcrumb">
+                     {{node}}
+                  </a>
+                  {% endfor %}
+                  <a target="_blank" href="http://theonionbay.club" class="white-text breadcrumb">
+                     Tracker
+                  </a>
+               </div>
+            </div>
             {% else %}
             <a href="/connect">
                <button class="btn waves-effect waves-light">Onion connect
