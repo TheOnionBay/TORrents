@@ -74,6 +74,10 @@ class Node(Flask):
         from_ip = request.remote_addr
 
         colour = choice(self.colours)
+
+        if "CID" not in message:
+            return "No CID in message", 400  # 400 Bad Request
+
         self.cprint([from_ip], "incoming", colour)
         self.cprint([message["CID"]], "cid", colour)
 
@@ -85,12 +89,14 @@ class Node(Flask):
         # If the message is a normal message from down to upstream or
         # to a bridge
         elif message["CID"] in self.down_relay.keys():
+            if not self.matching_cid_ip_from_down(message["CID"],from_ip):
+                return "Invalid Incoming IP",400
             return self.forward_upstream(message, colour)
-
         # If the message is a response from up to downstream
         elif message["CID"] in self.up_relay.keys():
+            if self.matching_cid_ip_from_up(message["CID"],from_ip):
+                return "Invalid Incoming IP",400
             return self.forward_downstream(message, colour)
-
         # We don't know the CID of the message, we assume it contains
         # an AES key
         elif "aes_key" in message:
