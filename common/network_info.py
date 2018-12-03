@@ -29,11 +29,13 @@ domain_names = {
 }
 
 def get_url(ip):
+    """Returns a valid url.
+    """
     return "http://" + ip + ":" + str(port)
 
 # tracker = "192.168.1.60"
 
-# node_pool = [
+# node_pool = [ 
 #     "192.168.1.11",
 #     "192.168.1.12",
 #     "192.168.1.19",
@@ -41,9 +43,6 @@ def get_url(ip):
 #     "192.168.1.55"
 # ]
 
-
-# For now private keys are stored here, we should decide how to create them
-# and make the public keys available to the client
 public_keys = json.load(open("common/public_keys.json"))
 for ip, key in public_keys.items():
     public_keys[ip] = rsa.RSAPublicKey(key["n"], key["e"])

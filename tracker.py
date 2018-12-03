@@ -20,6 +20,8 @@ class Tracker(Flask):
         self.fsid_counter = 0
 
     def index(self):
+        """Renders template to be displayed on a browser.
+        """
         # Process list of files a client has
         return render_template("index.html",
                                data={"file_list": list(self.files.keys()),
