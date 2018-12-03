@@ -38,10 +38,15 @@ http://theonionbay.club/
 
 ### Nodes
 http://node1.theonionbay.club/
+
 http://node2.theonionbay.club/
+
 http://node3.theonionbay.club/
+
 http://node4.theonionbay.club/
+
 http://node5.theonionbay.club/
+
 http://node6.theonionbay.club/
 
 ### Clients
