@@ -18,19 +18,21 @@ Firstly, run the tracker:
 ```
 
 Then, you will need to run at least three nodes.
-<ip\> : the public ip of the current machine.
+`<ip>` : the public ip of the current machine.
 ```bash
      python3 node.py <ip>
 ```
 
 And finally, the client.
-<lof\> : path to a *.json file containing the files. Examples can be found on the /client folder.
+`<path-to-list-of-files>` : path to a *.json file containing the files. Examples can be found on the /client folder.
 
 ```bash
-     python3 client.py <lof>
+     python3 client.py <path-to-list-of-files>
 ```
+Keep in mind this option is LAN-oriented. You will need different machines.
+
 ##Option 2 - Online
-You can also try TheOnionBay online on the following links:
+You can also run TheOnionBay online on the following links:
 ###Tracker
 http://theonionbay.club/
 
@@ -47,6 +49,7 @@ http://alice.theonionbay.club/
 http://bob.theonionbay.club/
 
 The server is synchronized with the github repository.
+
 
 # Terms and definitions
 
