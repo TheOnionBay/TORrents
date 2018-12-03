@@ -189,6 +189,7 @@ class Node(Flask):
             # If we pass here, then we should just forward upstream
         except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
             # A decoding exception occurred, just forward upstream
+            pass
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
