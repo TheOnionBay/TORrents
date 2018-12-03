@@ -158,11 +158,15 @@ class Node(Flask):
 
         self.cprint([message["CID"], down_ip], "receive_from_bridge", colour)
 
+        payload = bytes.fromhex(message["payload"])
+        signatures = [self.sign(payload).hex()]
+
         new_message = {
             "CID": down_cid,
             # Encrypt the message when sending downstream, we
             # received it as encoded plaintext
-            "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
+            "payload": aes_encrypt(payload), sess_key).hex(),
+            "signatures": signatures
         }
         requests.post(get_url(down_ip), json=new_message)
         return "ok"
