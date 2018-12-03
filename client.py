@@ -181,7 +181,9 @@ class Client(Flask):
             if decrypted_signature != hashed_payload:
                 return "Signatures do not match for node" + domain_names[node], 401 # Not Authorized
 
+        print("before:", payload)
         payload = bytes_to_json(payload)
+        print("after:", payload)
         return payload
 
 
