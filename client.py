@@ -30,7 +30,7 @@ class Client(Flask):
         self.add_url_rule("/disconnect", "disconnect", self.teardown, methods=["GET"])
         self.add_url_rule("/request", "request_file", self.request_file, methods=["POST"])
         self.owned_files = json.loads(filenames)
-        self.default_files_path = "files"
+        self.default_files_path = os.path.join("client", "files")
         self.network_files = set()
         self.tunnel_nodes = []
         self.log = ""
