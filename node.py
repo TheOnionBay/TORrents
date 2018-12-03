@@ -61,7 +61,7 @@ class Node(Flask):
     def index(self):
         """GET method on /. Displays node UI
         """
-        data = {"ip": self.ip,
+        data = {"ip": domain_names[self.ip],
                 "log": self.log}
 
         return render_template("index.html", data=data)

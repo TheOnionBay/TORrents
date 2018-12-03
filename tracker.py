@@ -2,7 +2,7 @@ import os
 import requests
 from random import choice
 from flask import Flask, render_template, request, abort
-from common.network_info import cid_size, get_url
+from common.network_info import cid_size, get_url, domain_names
 from common.encoding import json_to_bytes, bytes_to_json
 from crypto.random_bytes import generate_bytes
 
@@ -23,7 +23,7 @@ class Tracker(Flask):
         # Process list of files a client has
         return render_template("index.html",
                                data={"file_list": list(self.files.keys()),
-                                     "peers": self.peers})
+                                     "peers": {cid: domain_names[ip] for cid, ip in self.peers.items()}})
 
     def main_handler(self):
         """The main handler can get two types of requests:

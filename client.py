@@ -10,7 +10,7 @@ from crypto.random_bytes import generate_bytes
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
-from common.network_info import tracker, node_pool, public_keys, cid_size, get_url
+from common.network_info import tracker, node_pool, public_keys, cid_size, get_url, domain_names
 from common.encoding import json_to_bytes, bytes_to_json
 
 
@@ -34,10 +34,12 @@ class Client(Flask):
         """Serves HTML page with input to request file.
 
         """
-        data = {"owned_files": list(self.owned_files.keys()),
-                "network_files": list(self.network_files),
-                "connected": self.connected,
-                "tunnel": self.tunnel_nodes}
+        data = {
+            "owned_files": list(self.owned_files.keys()),
+            "network_files": list(self.network_files),
+            "connected": self.connected,
+            "tunnel": [domain_names[node] for node in self.tunnel_nodes]
+        }
         return render_template("index.html", data=data)
 
     def request_file(self):
