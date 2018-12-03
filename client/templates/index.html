@@ -60,21 +60,32 @@
                      </tr>
                   </thead>
                   <tbody>
-                     {% for file in data['owned_files'].keys() %}
+                     {% for name in data['owned_text_files'] %}
                      <tr>
-                        <td><a href="#{{file}}" class="modal-trigger">{{file}}</a></td>
+                        <td><a href="#{{name}}" class="modal-trigger">{{name}}</a></td>
                      </tr>
-                     <div id="{{file}}" class="modal">
+                     <div id="{{name}}" class="modal">
                         <div class="modal-content">
-                           <h4>File contents</h4>
-                            <!-- TODO : display the image/text here using the file_content() method-->
-                           <pre>{{ data['owned_files'][file] }}</pre>
+                           <pre>{{ data['owned_text_files'][name] }}</pre>
                         </div>
                         <div class="modal-footer">
                            <a href="#!" class="modal-close waves-effect waves-green btn teal">Close</a>
                         </div>
                      </div>
                      {% endfor %}
+                    {% for name in data['owned_images'] %}
+                    <tr>
+                       <td><a href="#{{name}}" class="modal-trigger">{{name}}</a></td>
+                    </tr>
+                    <div id="{{name}}" class="modal">
+                       <div class="modal-content">
+                          data['owned_images'][name]
+                       </div>
+                       <div class="modal-footer">
+                          <a href="#!" class="modal-close waves-effect waves-green btn teal">Close</a>
+                       </div>
+                    </div>
+                    {% endfor %}
                   </tbody>
                </table>
             </div>
@@ -90,7 +101,7 @@
 
                   <tbody>
                      {% for file in data['network_files'] %}
-                     {% if file not in data['owned_files'] %}
+                     {% if file not in data['owned_text_files'] and file not in data['owned_images'] %}
                      <tr>
                         <td>{{file}}</td>
                         <td>
