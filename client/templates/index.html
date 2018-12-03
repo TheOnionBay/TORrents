@@ -62,18 +62,15 @@
                      <div id="{{file}}" class="modal">
                         <div class="modal-content">
                            <h4>File contents</h4>
-                           <p>{{ data['owned_files'][file] }}</p>
+                           <pre>{{ data['owned_files'][file] }}</pre>
                         </div>
                         <div class="modal-footer">
-                           <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
+                           <a href="#!" class="modal-close waves-effect waves-green btn teal">Close</a>
                         </div>
                      </div>
                      {% endfor %}
                   </tbody>
                </table>
-               {% for file in data['owned_files'] %}
-               {% endfor %}
-
             </div>
             <div class="col s6">
                <h4>Available:</h4>
