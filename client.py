@@ -4,6 +4,7 @@ import requests
 import json
 from flask import Flask, render_template, request, redirect
 from random import sample
+import sys
 
 from common.hash import hash_payload
 from crypto.rsa import rsa_encrypt, rsa_decrypt
@@ -12,8 +13,12 @@ from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size, get_url, domain_names
-from common.encoding import json_to_bytes, bytes_to_json
+from common.encoding import json_to_bytes, bytes_to_json, payload_to_file, file_to_payload
 
+
+class SignatureNotMatching(Exception):
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
 
 class Client(Flask):
 
@@ -25,12 +30,20 @@ class Client(Flask):
         self.add_url_rule("/disconnect", "disconnect", self.teardown, methods=["GET"])
         self.add_url_rule("/request", "request_file", self.request_file, methods=["POST"])
         self.owned_files = json.loads(filenames)
+        self.default_files_path = os.path.join("client", "files")
         self.network_files = set()
         self.tunnel_nodes = []
+        self.log = ""
         self.connected = False
+        self.clean_files()
 
     def run(self):
         super().run(host='0.0.0.0', use_reloader=False)
+
+    def clean_files(self):
+        for file in os.listdir(self.default_files_path):
+            if os.path.isfile(os.path.join(self.default_files_path, file)):
+                os.remove(os.path.join(self.default_files_path, file))
 
     def index(self):
         """Serves HTML page with input to request file.
@@ -40,14 +53,15 @@ class Client(Flask):
             "owned_files": self.owned_files,
             "network_files": list(self.network_files),
             "connected": self.connected,
-            "tunnel": [domain_names[node] for node in self.tunnel_nodes]
+            "tunnel": [domain_names[node] for node in self.tunnel_nodes],
+            "log": self.log
         }
         return render_template("index.html", data=data)
 
     def request_file(self):
         """Asks the tracker for the filename given in the UI form."""
         file_name = request.form["filename"] or ""
-        print("Requesting file ", file_name)
+        self.log += "Requesting file " + file_name + "\n"
         tracker_payload = {
             "type": "request",
             "file": file_name
@@ -66,9 +80,10 @@ class Client(Flask):
 
         """
         msg = request.get_json()
+        self.log += "Receive message from " + msg["CID"] + "\n"
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
-        except RuntimeError as e:
+        except SignatureNotMatching as e:
             return str(e), 401 # 401 Not Authorized
 
         if payload["type"] == "request":
@@ -82,24 +97,31 @@ class Client(Flask):
 
     def handle_request(self, message):
         filename = message["file"]
+
+        self.log += "Got file request with filename " + filename + "\n"
+
         if filename not in self.owned_files:
+            self.log += "File request can't be fulfilled\n"
             # We don't have the file, error 404 not found
             return ("File request can't be fulfilled, we don't have file " + filename, 404)
 
         response = {
             "type": "file",
             "file": filename,
-            "data": self.owned_files[filename],
+            "data": file_to_payload(self.owned_files[filename]),
             "FSID": message["FSID"]
         }
         self.send_payload(response)
         return "ok"
 
     def handle_receive_file(self, payload):
-        self.owned_files[payload["file"]] = payload["data"]
+        self.log += "Received file " + payload["file"] + "\n"
+        self.owned_files[payload["file"]] = os.path.join(self.default_files_path, payload["file"])
+        payload_to_file(self.owned_files[payload["file"]], payload["data"])
         return "ok"
 
     def handle_network_ls(self, files):
+        self.log += "Received file listing from the server\n"
         self.network_files.update(files)
         return "ok"
 
@@ -113,7 +135,6 @@ class Client(Flask):
 
         """
         self.tunnel_nodes = self.select_nodes(node_pool)
-        print("I CHOSE: ", self.tunnel_nodes)
         self.sesskeys = [generate_bytes(aes_common.key_size) for _ in self.tunnel_nodes]
         self.cid = generate_bytes(cid_size).hex()
 
@@ -180,14 +201,17 @@ class Client(Flask):
         payload = bytes.fromhex(payload)
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
             payload = aes_decrypt(payload, sesskey)
+
+            hashed_payload = hash_payload(payload)
+
             signature = bytes.fromhex(signature)
             decrypted_signature = rsa_decrypt(signature, public_keys[node])
-            hashed_payload = hash_payload(payload)
+            # Take the last bytes of the decrypted signature, stripping padding
+            decrypted_signature = decrypted_signature[-len(hashed_payload):]
+
             if decrypted_signature != hashed_payload:
-                print("MISMATCH")
-                print("decrypted signature:", decrypted_signature)
-                print("hashed_payload:", hashed_payload)
-                raise RuntimeError("Signatures do not match for node" + domain_names[node])
+                self.log += "Signatures do not match for node" + domain_names[node] + "\n"
+                raise SignatureNotMatching("Signatures do not match for node" + domain_names[node])
 
         payload = bytes_to_json(payload)
         return payload

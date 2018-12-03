@@ -1,3 +1,4 @@
+import base64
 import json
 
 encoding = "utf-8"
@@ -13,10 +14,10 @@ def file_to_payload(file_path):
     with open(file_path, 'rb') as file:
         for line in file:
             res += line+Rb'$$%\n'
-    return res
+    return base64.encodebytes(res).hex()
 
 def payload_to_file(file_path, payload):
     with open(file_path, 'wb') as file:
-        for line in payload.split(Rb'$$%\n'):
+        for line in base64.decodebytes(bytearray.fromhex(payload)).split(Rb'$$%\n'):
             file.write(line)
 
