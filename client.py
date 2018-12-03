@@ -53,7 +53,7 @@ class Client(Flask):
     def request_file(self):
         """Asks the tracker for the filename given in the UI form."""
         file_name = request.form["filename"] or ""
-        log += "Requesting file " + file_name + "\n"
+        self.log += "Requesting file " + file_name + "\n"
         tracker_payload = {
             "type": "request",
             "file": file_name
@@ -72,7 +72,7 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        log += "GOT MSG: " + msg + "\n"
+        self.log += "GOT MSG: " + msg + "\n"
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
         except SignatureNotMatching as e:
@@ -183,18 +183,18 @@ class Client(Flask):
         self.encrypt_payload.
 
         """
-        log += "decrypting payload: " + payload + "\n"
+        self.log += "decrypting payload: " + payload + "\n"
         payload = bytes.fromhex(payload)
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
-            log += "removing one layer on payload\n"
+            self.log += "removing one layer on payload\n"
             payload = aes_decrypt(payload, sesskey)
             signature = bytes.fromhex(signature)
             decrypted_signature = rsa_decrypt(signature, public_keys[node])
             hashed_payload = hash_payload(payload)
             if decrypted_signature != hashed_payload:
-                log += "MISMATCH" + "\n"
-                log += "decrypted signature:" + decrypted_signature.hex() + "\n"
-                log += "hashed_payload:" + hashed_payload.hex() + "\n"
+                self.log += "MISMATCH" + "\n"
+                self.log += "decrypted signature:" + decrypted_signature.hex() + "\n"
+                self.log += "hashed_payload:" + hashed_payload.hex() + "\n"
                 raise SignatureNotMatching("Signatures do not match for node" + domain_names[node])
 
         payload = bytes_to_json(payload)
