@@ -129,6 +129,7 @@ class Node(Flask):
     def transmit_to_bridge(self, payload, colour):
         print(self.up_file_transfer)
         if not self.fsid_exists(payload["FSID"]):
+            print("FSID not found !!")
             return "FSID not found for file sharing", 404 # 404 Not Found
 
         bridge_ip, bridge_cid = self.up_file_transfer["FSID": payload["FSID"], ("BridgeIP", "BridgeCID")]
