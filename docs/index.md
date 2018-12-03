@@ -301,8 +301,8 @@ tracker.
 
 Nodes can at any point receive control messages from the tracker. How do they
 differentiate between messages intended for them and messages that have to go
-back to the client ? The URL on which the message is sent is appended by
-`control/`, for example `http://node1.theonionbay.club/control`.
+back to the client ? The URL on which the message is sent is appended with
+`/control`, for example `http://node1.theonionbay.club/control`.
 
 * *Bridge creation*:
 
