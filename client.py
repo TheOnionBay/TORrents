@@ -178,6 +178,13 @@ class Client(Flask):
         payload = bytes_to_json(payload)
         return payload
 
+    def logout(self):
+        payloadZ = aes_encrypt(json_to_bytes({"type": "logout", "payload": {"type": "logout"}}), self.sesskeys[2])
+        payloadY = aes_encrypt(json_to_bytes({"type": "logout", "payload": payloadZ}), self.sesskeys[1])
+        payloadX = aes_encrypt(json_to_bytes({"type": "logout", "payload": payloadY}), self.sesskeys[0])
+
+        self.send_payload(payloadX)
+
 
 parser = argparse.ArgumentParser(description='TORrent client')
 parser.add_argument('lof', type=open, help='list of files')
