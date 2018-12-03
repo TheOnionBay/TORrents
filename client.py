@@ -135,7 +135,7 @@ class Client(Flask):
 
         response = {
             "type": "file",
-            "file": filename,
+            "file": self.owned_files[filename],
             "data": file_to_payload(self.owned_files[filename]),
             "FSID": message["FSID"]
         }
