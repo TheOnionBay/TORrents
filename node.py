@@ -165,7 +165,7 @@ class Node(Flask):
             "CID": down_cid,
             # Encrypt the message when sending downstream, we
             # received it as encoded plaintext
-            "payload": aes_encrypt(payload), sess_key).hex(),
+            "payload": aes_encrypt(payload, sess_key).hex(),
             "signatures": signatures
         }
         requests.post(get_url(down_ip), json=new_message)
