@@ -5,7 +5,8 @@ import json
 from flask import Flask, render_template, request, redirect
 from random import sample
 
-from crypto.rsa import rsa_encrypt
+from common.hash import hash_payload
+from crypto.rsa import rsa_encrypt, rsa_decrypt
 from crypto.random_bytes import generate_bytes
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
@@ -64,7 +65,7 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        payload = self.decrypt_payload(msg["payload"])
+        payload = self.decrypt_payload(msg["payload"], msg["signatures"])
         if payload["type"] == "request":
             return self.handle_request(payload)
         elif payload["type"] == "file":
@@ -166,14 +167,19 @@ class Client(Flask):
 
         requests.post(get_url(self.tunnel_nodes[0]), json=message)
 
-    def decrypt_payload(self, payload):
+    def decrypt_payload(self, payload, signatures):
         """Peels 3 layers from the payload. Opposite routine to
         self.encrypt_payload.
 
         """
         payload = bytes.fromhex(payload)
-        for node, sesskey in zip(self.tunnel_nodes, self.sesskeys):
+        for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
             payload = aes_decrypt(payload, sesskey)
+            signature = bytes.fromhex(signature)
+            decrypted_signature = rsa_decrypt(signature, public_keys[node])
+            hashed_payload = hash_payload(payload)
+            if decrypted_signature != hashed_payload:
+                return "Signatures do not match for node" + domain_names[node], 401 # Not Authorized
 
         payload = bytes_to_json(payload)
         return payload

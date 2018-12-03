@@ -7,6 +7,7 @@ from midict import MIDict
 import json
 
 from common.encoding import bytes_to_json, json_to_bytes
+from common.hash import hash_payload
 from common.network_info import private_keys, cid_size, tracker, domain_names, get_url
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
@@ -17,7 +18,6 @@ from crypto.rsa import rsa_decrypt, rsa_encrypt
 from colorama import Fore, Back
 import colorama
 import sys
-import hashlib
 from random import choice
 
 
@@ -287,10 +287,7 @@ class Node(Flask):
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
 
     def sign(self, payload):
-        m = hashlib.md5()
-        m.update(payload)
-        encrypted = rsa_encrypt(m.digest(), self.private_key)
-        return encrypted
+        return rsa_encrypt(hash_payload(payload), self.private_key)
 
 
 parser = argparse.ArgumentParser(description='TORrent node')

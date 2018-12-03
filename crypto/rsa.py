@@ -1,4 +1,4 @@
-from random import SystemRandom # cryptographically secure RNG
+from random import SystemRandom  # cryptographically secure RNG
 from math import gcd, sqrt
 
 random_gen = SystemRandom()
@@ -17,23 +17,28 @@ max_message_length = (key_width // 8)
 # This value is a common one found online.
 e = 65537
 
+
 class RSAPublicKey:
     """Holds a public key for RSA encryption. This consists in two different
     integers, n and e. Both have the same bit width. This key can be shared
     publicly. It is created by generate_rsa.
     """
+
     def __init__(self, n, e):
         self.n = n
         self.e = e
+
 
 class RSAPrivateKey:
     """Holds a private key for RSA encryption. This consists in two different
     integers, n and d. Both have the same bit width. This key has to be
     kept secret at all times. It is created by generate_rsa.
     """
+
     def __init__(self, n, d):
         self.n = n
         self.d = d
+
 
 def generate_rsa():
     """Generates private and public RSA keys. Use the public one for
@@ -49,6 +54,7 @@ def generate_rsa():
             n = p * q
             d = mod_inverse(e, lambda_n)
             return RSAPublicKey(n, e), RSAPrivateKey(n, d)
+
 
 def rsa_encrypt(plain_text, public_key):
     """Encrypts a message. The message has to be of type bytes and have a
@@ -76,6 +82,7 @@ def rsa_encrypt(plain_text, public_key):
     # Encrypt the message
     return exp_mod(plain_text, public_key.e, public_key.n).to_bytes(cipher_text_length, byteorder="big", signed=False)
 
+
 def rsa_decrypt(cipher_text, private_key):
     """Decrypts a message. This is the reverse process of rsa_encrypt. The
     result is padded with zero bytes on the left, to make it max_message_length
@@ -101,8 +108,9 @@ def rsa_decrypt(cipher_text, private_key):
     res = exp_mod(cipher_text, private_key.d, private_key.n)
 
     # Convert the result back to bytes
-    res=res.to_bytes(max_message_length, byteorder="big", signed=False)
+    res = res.to_bytes(max_message_length, byteorder="big", signed=False)
     return res
+
 
 def mod_inverse(a, b):
     """Calculates the inverse of a in a ring of modulus b. That is,
@@ -121,12 +129,14 @@ def mod_inverse(a, b):
 
     return old_s % b
 
+
 def lcm(a, b):
     """Returns the least common multiple of a and b."""
     # TODO check that
     return abs(a * b) // gcd(a, b)
 
-def is_probably_prime(n, trials = 20):
+
+def is_probably_prime(n, trials=20):
     """Implements The Fermat Primality test. If the number n is not prime,
     the probability that this function returns True is 1/(2^trials).
     """
@@ -134,9 +144,10 @@ def is_probably_prime(n, trials = 20):
         a = random_gen.randint(2, n)
         if gcd(a, n) != 1:
             return False
-        if exp_mod(a, n-1, n) != 1:
+        if exp_mod(a, n - 1, n) != 1:
             return False
     return True
+
 
 def random_prime(width):
     """Generate a random number which has a high probability of being
@@ -145,12 +156,13 @@ def random_prime(width):
     # We define a maximum and a minimum to pick the number, to ensure that
     # the product of two of these random primes has always at least width * 2
     # bits.
-    max = (1 << width) - 1 # Equals 2^width - 1, all bit sets
-    min = int(sqrt(2) * (1 << (width - 1))) # Equals sqrt(2) * 2^(width - 1)
+    max = (1 << width) - 1  # Equals 2^width - 1, all bit sets
+    min = int(sqrt(2) * (1 << (width - 1)))  # Equals sqrt(2) * 2^(width - 1)
     while True:
         res = random_gen.randint(min, max)
         if is_probably_prime(res):
             return res
+
 
 def exp_mod(a, e, b):
     """Computes a to the power of e, modulo b. That could be equivalent
