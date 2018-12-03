@@ -24,7 +24,7 @@ class Node(Flask):
         super().__init__(name, template_folder=os.path.abspath('node/templates'))
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/", "index", self.index, methods=["GET"])
-        self.add_url_rule("/control/", "control_handler", self.control_handler, methods=["POST"])
+        self.add_url_rule("/control", "control_handler", self.control_handler, methods=["POST"])
         self.private_key = private_keys[ip]
         self.up_relay = {}
         self.down_relay = {}
@@ -109,7 +109,7 @@ class Node(Flask):
         colour = choice(self.colours)
         #if from_ip != tracker:
             #return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
-        self.cprint([from_ip, "fromTracker"], colour)
+        self.cprint([from_ip], "fromTracker", colour)
         if "type" in message and message["type"] == "make_bridge":
             return self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
         elif "type" in message and message["type"] == "receive_bridge":

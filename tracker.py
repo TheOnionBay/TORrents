@@ -100,7 +100,7 @@ class Tracker(Flask):
             "FSID": fsid
         }
         # Send on the control channel of the node
-        requests.post("http://" + owning_client_ip + "/control/", json=make_bridge_message)
+        requests.post("http://" + owning_client_ip + "/control", json=make_bridge_message)
 
         # Send a message to the node at the end of the bridge
         receive_bridge_message = {
@@ -109,7 +109,7 @@ class Tracker(Flask):
             "bridge_CID": bridge_cid
         }
         # Send on the control channel of the node
-        requests.post("http://" + request_client_ip + "/control/", json=receive_bridge_message)
+        requests.post("http://" + request_client_ip + "/control", json=receive_bridge_message)
 
         # Send a message to the client, asking he/she to send the file
         request_message = {
