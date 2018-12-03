@@ -25,9 +25,54 @@
             </div>
          </div>
       </div>
-      <!-- TODO: display relay table -->
+
+      <div class="row">
+         <button data-target="modal1" class="btn modal-trigger" id="btn-1">Up Relay</button>
+         <div id="modal1" class="modal modal-fixed-footer">
+         <div class="modal-content">
+            <pre>{{data["up_relay"]}}</pre>
+         </div>
+         <div class="modal-footer">
+            <a href="" class="modal-action modal-close waves-effet waves-green btn-flat">Agree</a>
+         </div>
+         </div>
+
+         <button data-target="modal2" class="btn modal-trigger" id="btn-1">Down Relay</button>
+         <div id="modal2" class="modal modal-fixed-footer">
+         <div class="modal-content">
+            <pre>{{data["down_relay"]}}</pre>
+         </div>
+         <div class="modal-footer">
+            <a href="" class="modal-action modal-close waves-effet waves-green btn-flat">Agree</a>
+         </div>
+         </div>
+
+         <button data-target="modal3" class="btn modal-trigger" id="btn-1">Up File Transfert</button>
+         <div id="modal3" class="modal modal-fixed-footer">
+         <div class="modal-content">
+            <pre>{{data["up_file_transfer"]}}</pre>
+         </div>
+         <div class="modal-footer">
+            <a href="" class="modal-action modal-close waves-effet waves-green btn-flat">Agree</a>
+         </div>
+         </div>
+
+         <button data-target="modal4" class="btn modal-trigger" id="btn-1">Down File Transfer</button>
+         <div id="modal4" class="modal modal-fixed-footer">
+         <div class="modal-content">
+            <pre>{{data["own_file_transfer"]}}</pre>
+         </div>
+         <div class="modal-footer">
+            <a href="" class="modal-action modal-close waves-effet waves-green btn-flat">Down File Transfer</a>
+         </div>
+         </div>
+      </div>
+
+
+
       </div>
 
       <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+      <script>M.AutoInit();</script>
    </body>
 </html>

@@ -64,7 +64,12 @@ class Node(Flask):
         """GET method on /. Displays node UI
         """
         data = {"ip": domain_names[self.ip],
-                "log": self.log}
+                "log": self.log,
+                "up_relay" : self.up_relay,
+                "down_relay" : self.down_relay,
+                "up_file_transfer" : self.up_file_transfer,
+                "down_file_transfer" : self.down_file_transfer
+                }
 
         return render_template("index.html", data=data)
 
