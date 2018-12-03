@@ -67,8 +67,18 @@ class Client(Flask):
         """Serves HTML page with input to request file.
 
         """
+        owned_text_files = {}
+        owned_images = {}
+
+        for name, file in self.owned_files.items():
+            if file.lower().endswith(".jpg") or file.lower().endswith(".png"):
+                owned_images[name] = file
+            else:
+                with open(file) as f:
+                    owned_text_files[name] = f.read()
         data = {
-            "owned_files": self.owned_files,
+            "owned_images": owned_images,
+            "owned_text_files": owned_text_files,
             "network_files": list(self.network_files),
             "connected": self.connected,
             "tunnel": [domain_names[node] for node in self.tunnel_nodes],
