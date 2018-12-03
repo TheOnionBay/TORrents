@@ -4,6 +4,7 @@ import requests
 import json
 from flask import Flask, render_template, request, redirect
 from random import sample
+import sys
 
 from common.hash import hash_payload
 from crypto.rsa import rsa_encrypt, rsa_decrypt
@@ -50,7 +51,7 @@ class Client(Flask):
     def request_file(self):
         """Asks the tracker for the filename given in the UI form."""
         file_name = request.form["filename"] or ""
-        print("Requesting file ", file_name)
+        print("Requesting file ", file_name, file=sys.stdout)
         tracker_payload = {
             "type": "request",
             "file": file_name
@@ -69,7 +70,7 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        print("GOT MSG: ", msg)
+        print("GOT MSG: ", msg, file=sys.stdout)
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
         except SignatureNotMatching as e:
@@ -117,7 +118,7 @@ class Client(Flask):
 
         """
         self.tunnel_nodes = self.select_nodes(node_pool)
-        print("I CHOSE: ", self.tunnel_nodes)
+        print("I CHOSE: ", self.tunnel_nodes, file=sys.stdout)
         self.sesskeys = [generate_bytes(aes_common.key_size) for _ in self.tunnel_nodes]
         self.cid = generate_bytes(cid_size).hex()
 
@@ -181,18 +182,18 @@ class Client(Flask):
         self.encrypt_payload.
 
         """
-        print("decrypting payload: " + payload)
+        print("decrypting payload: " + payload, file=sys.stdout)
         payload = bytes.fromhex(payload)
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
-            print("removing one layer on payload")
+            print("removing one layer on payload", file=sys.stdout)
             payload = aes_decrypt(payload, sesskey)
             signature = bytes.fromhex(signature)
             decrypted_signature = rsa_decrypt(signature, public_keys[node])
             hashed_payload = hash_payload(payload)
             if decrypted_signature != hashed_payload:
-                print("MISMATCH")
-                print("decrypted signature:", decrypted_signature)
-                print("hashed_payload:", hashed_payload)
+                print("MISMATCH", file=sys.stdout)
+                print("decrypted signature:", decrypted_signature, file=sys.stdout)
+                print("hashed_payload:", hashed_payload, file=sys.stdout)
                 raise SignatureNotMatching("Signatures do not match for node" + domain_names[node])
 
         payload = bytes_to_json(payload)

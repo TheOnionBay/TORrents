@@ -221,6 +221,7 @@ class Node(Flask):
             "payload": aes_encrypt(payload, sess_key).hex(),
             "signatures": signatures
         }
+        print(new_message)
         requests.post(get_url(down_ip), json=new_message)
         return "ok"
 
