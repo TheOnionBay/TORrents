@@ -29,8 +29,8 @@ class Node(Flask):
         self.private_key = private_keys[ip]
         self.up_relay = {}
         self.down_relay = {}
-        self.up_file_transfer = MIDict([], ["FSID", "BridgeCID", "BridgeIP"])
-        self.down_file_transfer = MIDict([], ["BridgeCID", "DownCID"])
+        self.up_file_transfer = {}
+        self.down_file_transfer = {}
 
         self.ip = ip
         self.colour = None
@@ -77,7 +77,7 @@ class Node(Flask):
 
         # If the message is received from a bridge, and to be
         # transmitted down to the client
-        if message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
+        if message["CID"] in self.down_file_transfer:
             return self.receive_from_bridge(message, colour)
 
         # If the message is a normal message from down to upstream or
@@ -119,21 +119,18 @@ class Node(Flask):
     def matching_cid_ip_from_up(self, cid, fromip):
         return fromip == self.up_relay[cid]["UpIP"]
 
-    def bridgeCID_points_to_existing_downIP(self,bridgeCID):
-        down_cid = self.down_file_transfer["BridgeCID": bridgeCID, "DownCID"]
+    def bridgeCID_matches_existing_downCID(self, bridgeCID):
+        down_cid = self.down_file_transfer[bridgeCID]
         return down_cid in self.down_relay.keys()
 
-    def fsid_exists(self,fsid):
-        return fsid in self.up_file_transfer.indices["FSID"]
-
     def transmit_to_bridge(self, payload, colour):
-        print(self.up_file_transfer)
-        if not self.fsid_exists(payload["FSID"]):
-            print("FSID not found !!")
-            return "FSID not found for file sharing", 404 # 404 Not Found
+        fsid = payload["FSID"]
+        # Disabled for now, this test causes problems
+        #if fsid not in self.up_file_transfer:
+        #    return "FSID not found for file sharing", 404 # 404 Not Found
 
-        bridge_ip, bridge_cid = self.up_file_transfer["FSID": payload["FSID"], ("BridgeIP", "BridgeCID")]
-        self.cprint([payload["FSID"], bridge_ip], "transmit_to_bridge", colour)
+        bridge_ip, bridge_cid = self.up_file_transfer[fsid]
+        self.cprint([fsid, bridge_ip], "transmit_to_bridge", colour)
 
         new_message = {
             "CID": bridge_cid,
@@ -148,7 +145,11 @@ class Node(Flask):
         return "ok"
 
     def receive_from_bridge(self, message, colour):
-        down_cid = self.down_file_transfer["BridgeCID": message["CID"], "DownCID"]
+        # Disabled check for now, it may cause problems
+        #if not self.bridgeCID_matches_existing_downCID(message["CID"])
+            #return "Bridge CID does not matches with a down CID", 400 # 400 Bad Request
+
+        down_cid = self.down_file_transfer[message["CID"]]
 
         down_ip = self.down_relay[down_cid]["DownIP"]
         sess_key = self.down_relay[down_cid]["SessKey"]
@@ -269,7 +270,7 @@ class Node(Flask):
         down_ip = self.up_relay[origin_cid]["DownIP"]
 
         self.cprint([down_ip, down_cid], "receive_bridge", colour)
-        self.down_file_transfer[bridge_cid] = (down_cid)
+        self.down_file_transfer[bridge_cid] = down_cid
         return "ok"
 
     def cprint(self, args, id, colour):
