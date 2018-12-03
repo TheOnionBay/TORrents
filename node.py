@@ -54,7 +54,6 @@ class Node(Flask):
                 "receive_bridge": "Creating bridge entry for the future downstream file transfer of a file to {0} with CID {1}",
                 # ip, cid
             }
-        # self.cprint(.format(ip),Fore.GREEN)
 
     def run(self):
         self.cprint([self.ip], "online", Fore.GREEN)
@@ -106,8 +105,8 @@ class Node(Flask):
         message = request.get_json()
         from_ip = request.remote_addr
         colour = choice(self.colours)
-        #if from_ip != tracker:
-            #return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
+        if from_ip != tracker:
+            return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
         self.cprint([from_ip], "fromTracker", colour)
         if "type" in message and message["type"] == "make_bridge":
             return self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
@@ -127,8 +126,8 @@ class Node(Flask):
     def transmit_to_bridge(self, payload, colour):
         fsid = payload["FSID"]
         # Disabled for now, this test causes problems
-        #if fsid not in self.up_file_transfer:
-            #return "FSID not found for file sharing", 404 # 404 Not Found
+        if fsid not in self.up_file_transfer:
+            return "FSID not found for file sharing", 404 # 404 Not Found
 
         bridge_ip = self.up_file_transfer[fsid]["IP"]
         bridge_cid = self.up_file_transfer[fsid]["CID"]
@@ -148,8 +147,8 @@ class Node(Flask):
 
     def receive_from_bridge(self, message, colour):
         # Disabled check for now, it may cause problems
-        #if not self.bridgeCID_matches_existing_downCID(message["CID"])
-            #return "Bridge CID does not matches with a down CID", 400 # 400 Bad Request
+        if not self.bridgeCID_matches_existing_downCID(message["CID"])
+            return "Bridge CID does not matches with a down CID", 400 # 400 Bad Request
 
         down_cid = self.down_file_transfer[message["CID"]]
 
