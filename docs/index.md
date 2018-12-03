@@ -3,7 +3,35 @@
 - This is TOR on top of HTTP
 - All members of the network listen on port 5000 (peers, nodes and tracker)
 
-# Terms definitions
+# Installation
+Install **python3** and **pipenv** on your machine, then on the root of the project run:
+```bash
+     pipenv install
+     pipenv shell
+```
+This is will install all python dependencies and activate the project's virtual environment.
+#Usage
+
+Firstly, run the tracker:
+```bash
+    python3 tracker.py
+```
+
+Then, you will need to run at least three nodes.
+<ip\> : the public of ip of the current machine.
+```bash
+     python3 node.py <ip>
+```
+
+And finally, the client.
+<lof\> : path to a *.json file containing the files. Examples can be found on the /client folder.
+
+```bash
+     python3 client.py <lof>
+```
+
+
+# Terms and definitions
 
 * *Symmetric key*: a 128-bits key used for AES encryption/decryption.
 * *Assymetric key*: a 1024-bits key used for RSA encryption/decryption.
