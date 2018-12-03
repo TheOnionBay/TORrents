@@ -187,7 +187,7 @@ class Node(Flask):
                 return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
             elif "type" in decoded_payload:
-                if decoded_payload["type"] == "logout":
+                if decoded_payload["type"] == "teardown":
                     self.teardown(message["CID"])
 
         except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:

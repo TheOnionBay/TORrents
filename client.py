@@ -178,10 +178,10 @@ class Client(Flask):
         payload = bytes_to_json(payload)
         return payload
 
-    def logout(self):
-        payloadZ = aes_encrypt(json_to_bytes({"type": "logout", "payload": {"type": "logout"}}), self.sesskeys[2])
-        payloadY = aes_encrypt(json_to_bytes({"type": "logout", "payload": payloadZ}), self.sesskeys[1])
-        payloadX = aes_encrypt(json_to_bytes({"type": "logout", "payload": payloadY}), self.sesskeys[0])
+    def teardown(self):
+        payloadZ = aes_encrypt(json_to_bytes({"type": "teardown", "payload": {"type": "teardown"}}), self.sesskeys[2])
+        payloadY = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadZ}), self.sesskeys[1])
+        payloadX = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadY}), self.sesskeys[0])
 
         self.send_payload(payloadX)
 

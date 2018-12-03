@@ -40,7 +40,9 @@ class Tracker(Flask):
         # files it
         if payload["type"] == "ls":
             return self.handle_new_client(message["CID"], request.remote_addr, payload["files"])
-
+        elif payload["type"] == "teardown":
+            self.teardown(message["CID"])
+            return "ok"
         # A client sends a file request, this is the only other
         # possibility
         elif payload["type"] == "request":
@@ -123,6 +125,16 @@ class Tracker(Flask):
         requests.post(get_url(owning_client_ip), json=request_message)
         return "ok"
 
+    def teardown(self, cid):
+        del self.peers[cid]
+        to_be_removed = []
+        for file in self.files.keys():
+            if cid in self.files[file]:
+                self.files[file].remove(cid)
+                if not self.files[file]:
+                    to_be_removed.append(file)
+        for file in to_be_removed:
+            del self.files[file]
 
 tracker = Tracker()
 tracker.run(host='0.0.0.0', use_reloader=False)
