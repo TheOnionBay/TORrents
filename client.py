@@ -10,7 +10,7 @@ from crypto.random_bytes import generate_bytes
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
-from common.network_info import tracker, node_pool, public_keys, cid_size
+from common.network_info import tracker, node_pool, public_keys, cid_size, get_url
 from common.encoding import json_to_bytes, bytes_to_json
 
 
@@ -141,7 +141,7 @@ class Client(Flask):
             "payload": aes_encrypt(json_to_bytes(payloadX), self.sesskeys[0]).hex()
         }
 
-        requests.post("http://" + self.tunnel_nodes[0], json=message)
+        requests.post(get_url(self.tunnel_nodes[0]), json=message)
         self.connected = True
         return "Connected to TheOnionBay. <a href='/'>Go back</a>"
 
@@ -162,7 +162,7 @@ class Client(Flask):
             "payload": payload.hex()
         }
 
-        requests.post("http://" + self.tunnel_nodes[0], json=message)
+        requests.post(get_url(self.tunnel_nodes[0]), json=message)
 
     def decrypt_payload(self, payload):
         """Peels 3 layers from the payload. Opposite routine to

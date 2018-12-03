@@ -2,7 +2,7 @@ import os
 import requests
 from random import choice
 from flask import Flask, render_template, request, abort
-from common.network_info import cid_size
+from common.network_info import cid_size, get_url
 from common.encoding import json_to_bytes, bytes_to_json
 from crypto.random_bytes import generate_bytes
 
@@ -37,10 +37,9 @@ class Tracker(Flask):
         payload = bytes_to_json(bytes.fromhex(message["payload"]))
 
         # A new client connects to the network by sending the list of
-        # files it has
-        from_ip = request.remote_addr + ":5000"
+        # files it
         if payload["type"] == "ls":
-            return self.handle_new_client(message["CID"], from_ip, payload["files"])
+            return self.handle_new_client(message["CID"], request.remote_addr, payload["files"])
 
         # A client sends a file request, this is the only other
         # possibility
@@ -69,8 +68,7 @@ class Tracker(Flask):
                 "files": list(self.files.keys())
             }).hex()
         }
-        url = "http://" + ip
-        requests.post(url, json=response)
+        requests.post(get_url(ip), json=response)
         return "ok"
 
     def handle_file_request(self, request_client_cid, file):
@@ -100,7 +98,7 @@ class Tracker(Flask):
             "FSID": fsid
         }
         # Send on the control channel of the node
-        requests.post("http://" + owning_client_ip + "/control", json=make_bridge_message)
+        requests.post(get_url(owning_client_ip) + "/control", json=make_bridge_message)
 
         # Send a message to the node at the end of the bridge
         receive_bridge_message = {
@@ -109,7 +107,7 @@ class Tracker(Flask):
             "bridge_CID": bridge_cid
         }
         # Send on the control channel of the node
-        requests.post("http://" + request_client_ip + "/control", json=receive_bridge_message)
+        requests.post(get_url(request_client_ip) + "/control", json=receive_bridge_message)
 
         # Send a message to the client, asking he/she to send the file
         request_message = {
@@ -120,7 +118,7 @@ class Tracker(Flask):
                 "FSID": fsid
             }).hex()
         }
-        requests.post("http://" + owning_client_ip, json=request_message)
+        requests.post(get_url(owning_client_ip), json=request_message)
         return "ok"
 
 

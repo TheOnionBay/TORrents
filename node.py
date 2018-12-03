@@ -5,7 +5,7 @@ from flask import Flask, request, render_template
 from midict import MIDict
 
 from common.encoding import bytes_to_json, json_to_bytes
-from common.network_info import private_keys, cid_size, tracker
+from common.network_info import private_keys, cid_size, tracker, domain_names, get_url
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
@@ -69,7 +69,7 @@ class Node(Flask):
     def main_handler(self):
         message = request.get_json()
         print(message)
-        from_ip = request.remote_addr + ":5000"
+        from_ip = request.remote_addr
 
         colour = choice(self.colours)
         self.cprint([from_ip], "incoming", colour)
@@ -105,7 +105,7 @@ class Node(Flask):
 
         """
         message = request.get_json()
-        from_ip = request.remote_addr + ":5000"
+        from_ip = request.remote_addr
         colour = choice(self.colours)
         #if from_ip != tracker:
             #return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
@@ -142,7 +142,7 @@ class Node(Flask):
             # The payload is not encrypted, just encoded
             "payload": json_to_bytes(payload).hex()
         }
-        requests.post("http://" + bridge_ip, json=new_message)
+        requests.post(get_url(bridge_ip), json=new_message)
         return "ok"
 
     def receive_from_bridge(self, message, colour):
@@ -159,7 +159,7 @@ class Node(Flask):
             # received it as encoded plaintext
             "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        requests.post("http://" + down_ip, json=new_message)
+        requests.post(get_url(down_ip), json=new_message)
         return "ok"
 
 
@@ -174,7 +174,7 @@ class Node(Flask):
             # Decrypt the payload (peel one layer of the onion)
             "payload": aes_decrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        requests.post("http://" + up_ip, json=new_message)
+        requests.post(get_url(up_ip), json=new_message)
         return "ok"
 
     def forward_downstream(self, message, colour):
@@ -190,7 +190,7 @@ class Node(Flask):
             # Encrypt the payload (add a layer to the onion)
             "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
         }
-        requests.post("http://" + down_ip, json=new_message)
+        requests.post(get_url(down_ip), json=new_message)
         return "ok"
 
     def create_tunnel(self, message, colour):
@@ -215,13 +215,13 @@ class Node(Flask):
 
         self.cprint([message["CID"]], "unknownCID", colour)
         # Add info to the relay tables
-        self.down_relay[message["CID"]] = {"DownIP": request.remote_addr + ":5000",
+        self.down_relay[message["CID"]] = {"DownIP": request.remote_addr,
                                            "SessKey": sess_key,
                                            "UpCID": up_cid,
                                            "UpIP": payload["to"]}
 
         self.up_relay[up_cid] = {"DownCID": message["CID"],
-                                 "DownIP": request.remote_addr + ":5000",
+                                 "DownIP": request.remote_addr,
                                  "SessKey": sess_key,
                                  "UpIP": payload["to"]}
 
@@ -236,7 +236,7 @@ class Node(Flask):
             new_message["aes_key"] = payload["aes_key"]
 
         self.cprint([up_cid, payload["to"]], "add_to_relay", colour)
-        requests.post("http://" + payload["to"], json=new_message)
+        requests.post(get_url(payload["to"]), json=new_message)
         return "ok"
 
     def make_bridge(self, fsid, bridge_cid, bridge_ip, colour):
@@ -253,6 +253,11 @@ class Node(Flask):
         return "ok"
 
     def cprint(self, args, id, colour):
+        # Replace IPs by their domain names whenever possible in args
+        for i in range(len(args)):
+            if args[i] in domain_names:
+                args[i] = domain_names[args[i]]
+
         self.log += self.statements[id].format(*args)
         self.log += "\n"
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
