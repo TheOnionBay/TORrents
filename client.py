@@ -72,7 +72,7 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        log += "GOT MSG: ", msg + "\n"
+        log += "GOT MSG: " + msg + "\n"
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
         except SignatureNotMatching as e:
