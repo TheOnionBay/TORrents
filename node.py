@@ -7,12 +7,13 @@ from midict import MIDict
 import json
 
 from common.encoding import bytes_to_json, json_to_bytes
+from common.hash import hash_payload
 from common.network_info import private_keys, cid_size, tracker, domain_names, get_url
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
 from crypto.random_bytes import generate_bytes
-from crypto.rsa import rsa_decrypt
+from crypto.rsa import rsa_decrypt, rsa_encrypt
 
 from colorama import Fore, Back
 import colorama
@@ -95,7 +96,7 @@ class Node(Flask):
             return self.create_tunnel(message, colour)
 
         else:
-            return "Unknown kind of message", 400 # 400 Bad Request
+            return "Unknown kind of message", 400  # 400 Bad Request
 
     def control_handler(self):
         """Tracker control messages will arrive here. The table is update
@@ -106,7 +107,7 @@ class Node(Flask):
         from_ip = request.remote_addr
         colour = choice(self.colours)
         if from_ip != tracker:
-            return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
+            return "control messages only allowed from the tracker", 405  # 405 Method Not Allowed
         self.cprint([from_ip], "fromTracker", colour)
         if "type" in message and message["type"] == "make_bridge":
             return self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
@@ -127,7 +128,7 @@ class Node(Flask):
         fsid = payload["FSID"]
         # Disabled for now, this test causes problems
         if fsid not in self.up_file_transfer:
-            return "FSID not found for file sharing", 404 # 404 Not Found
+            return "FSID not found for file sharing", 404  # 404 Not Found
 
         bridge_ip = self.up_file_transfer[fsid]["IP"]
         bridge_cid = self.up_file_transfer[fsid]["CID"]
@@ -148,7 +149,7 @@ class Node(Flask):
     def receive_from_bridge(self, message, colour):
         # Disabled check for now, it may cause problems
         if not self.bridgeCID_matches_existing_downCID(message["CID"]):
-            return "Bridge CID does not matches with a down CID", 400 # 400 Bad Request
+            return "Bridge CID does not matches with a down CID", 400  # 400 Bad Request
 
         down_cid = self.down_file_transfer[message["CID"]]
 
@@ -165,7 +166,6 @@ class Node(Flask):
         }
         requests.post(get_url(down_ip), json=new_message)
         return "ok"
-
 
     def forward_upstream(self, message, colour):
         up_cid = self.down_relay[message["CID"]]["UpCID"]
@@ -203,13 +203,19 @@ class Node(Flask):
         down_ip = self.up_relay[message["CID"]]["DownIP"]
         sess_key = self.up_relay[message["CID"]]["SessKey"]
 
-
         self.cprint([message["CID"], "downstream", down_ip], "forward", colour)
+        signatures = []
+        if "signatures" in message:
+            signatures = message["signatures"]
+        payload = bytes.fromhex(message["payload"])
+        signature = self.sign(payload).hex()
+        signatures.append(signature)
 
         new_message = {
             "CID": down_cid,
             # Encrypt the payload (add a layer to the onion)
-            "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
+            "payload": aes_encrypt(payload, sess_key).hex(),
+            "signatures": signatures
         }
         requests.post(get_url(down_ip), json=new_message)
         return "ok"
@@ -226,7 +232,7 @@ class Node(Flask):
 
         if "relay" not in payload or "to" not in payload:
             # All these fields should be present
-            return "relay and to are needed in payload when creating the tunnel", 400 # 400 Bad Request
+            return "relay and to are needed in payload when creating the tunnel", 400  # 400 Bad Request
 
         # Generate a CID for the upstream link
         up_cid = generate_bytes(cid_size).hex()
@@ -258,7 +264,7 @@ class Node(Flask):
         return "ok"
 
     def make_bridge(self, fsid, bridge_cid, bridge_ip, colour):
-        self.cprint([bridge_ip, bridge_cid, "outgoing", fsid], "make_bridge",colour)
+        self.cprint([bridge_ip, bridge_cid, "outgoing", fsid], "make_bridge", colour)
         self.up_file_transfer[fsid] = {"IP": bridge_ip, "CID": bridge_cid}
         return "ok"
 
@@ -279,6 +285,9 @@ class Node(Flask):
         self.log += self.statements[id].format(*args)
         self.log += "\n"
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
+
+    def sign(self, payload):
+        return rsa_encrypt(hash_payload(payload), self.private_key)
 
 
 parser = argparse.ArgumentParser(description='TORrent node')
