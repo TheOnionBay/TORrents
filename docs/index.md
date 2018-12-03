@@ -9,7 +9,7 @@ Install **python3** and **pipenv** on your machine, then on the root of the proj
      pipenv install
      pipenv shell
 ```
-This is will install all python dependencies and activate the project's virtual environment.
+This will install all python dependencies and activate the project's virtual environment.
 #Usage
 ##Option 1 - LAN
 Firstly, run the tracker:
