@@ -57,6 +57,8 @@ class Tracker(Flask):
         self.peers[cid] = ip
 
         for file in files:
+            # Create a list of owning clients for the file if there is none,
+            # and put the cid of the client in it
             self.files.setdefault(file, []).append(cid)
 
         # Send back the list of files we have in the network
@@ -86,7 +88,7 @@ class Tracker(Flask):
         owning_client_ip = self.peers[owning_client_cid]
 
         # Create the CID and FSID for this bridge
-        bridge_cid = generate_bytes(cid_size)
+        bridge_cid = generate_bytes(cid_size).hex()
         fsid = self.fsid_counter
         self.fsid_counter += 1
 
