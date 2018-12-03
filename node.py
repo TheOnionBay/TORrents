@@ -1,3 +1,4 @@
+import traceback
 import os
 import argparse
 import requests
@@ -186,6 +187,7 @@ class Node(Flask):
             print("Unexpected error:", sys.exc_info()[0])
             print("MEssage: ", message)
             print("Decrypted payload:", payload)
+            print(traceback.format_exc())
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
