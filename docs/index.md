@@ -32,7 +32,7 @@ And finally, the client.
 Keep in mind this option is LAN-oriented. You will need different machines.
 
 ## Option 2 - Online
-You can also run TheOnionBay online on the following links:
+You can also find TheOnionBay online on the following links:
 ### Tracker
 http://theonionbay.club/
 
