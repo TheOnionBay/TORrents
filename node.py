@@ -4,6 +4,7 @@ import argparse
 import requests
 from flask import Flask, request, render_template
 from midict import MIDict
+import json
 
 from common.encoding import bytes_to_json, json_to_bytes
 from common.network_info import private_keys, cid_size, tracker, domain_names, get_url
@@ -53,7 +54,6 @@ class Node(Flask):
                 "receive_bridge": "Creating bridge entry for the future downstream file transfer of a file to {0} with CID {1}",
                 # ip, cid
             }
-        # self.cprint(.format(ip),Fore.GREEN)
 
     def run(self):
         self.cprint([self.ip], "online", Fore.GREEN)
@@ -105,8 +105,8 @@ class Node(Flask):
         message = request.get_json()
         from_ip = request.remote_addr
         colour = choice(self.colours)
-        #if from_ip != tracker:
-            #return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
+        if from_ip != tracker:
+            return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
         self.cprint([from_ip], "fromTracker", colour)
         if "type" in message and message["type"] == "make_bridge":
             return self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
@@ -126,8 +126,8 @@ class Node(Flask):
     def transmit_to_bridge(self, payload, colour):
         fsid = payload["FSID"]
         # Disabled for now, this test causes problems
-        #if fsid not in self.up_file_transfer:
-            #return "FSID not found for file sharing", 404 # 404 Not Found
+        if fsid not in self.up_file_transfer:
+            return "FSID not found for file sharing", 404 # 404 Not Found
 
         bridge_ip = self.up_file_transfer[fsid]["IP"]
         bridge_cid = self.up_file_transfer[fsid]["CID"]
@@ -142,15 +142,13 @@ class Node(Flask):
                 "data": payload["data"]
             }).hex()
         }
-        print("SENDING MESSAGE TO BRIDGE:")
-        print(new_message)
         requests.post(get_url(bridge_ip), json=new_message)
         return "ok"
 
     def receive_from_bridge(self, message, colour):
         # Disabled check for now, it may cause problems
-        #if not self.bridgeCID_matches_existing_downCID(message["CID"])
-            #return "Bridge CID does not matches with a down CID", 400 # 400 Bad Request
+        if not self.bridgeCID_matches_existing_downCID(message["CID"]):
+            return "Bridge CID does not matches with a down CID", 400 # 400 Bad Request
 
         down_cid = self.down_file_transfer[message["CID"]]
 
@@ -185,16 +183,12 @@ class Node(Flask):
 
             # Two possibilities here: the payload is for a bridge or
             # for the tracker
-            print(decoded_payload)
             if "FSID" in decoded_payload:
                 return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
-        except:
+        except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
             # A decoding exception occurred, just forward upstream
-            print("Unexpected error:", sys.exc_info()[0])
-            print("MEssage: ", message)
-            print("Decrypted payload:", payload)
-            print(traceback.format_exc())
+            pass
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {

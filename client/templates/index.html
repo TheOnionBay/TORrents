@@ -55,13 +55,25 @@
                      </tr>
                   </thead>
                   <tbody>
-                     {% for file in data['owned_files'] %}
+                     {% for file in data['owned_files'].keys() %}
                      <tr>
-                        <td>{{file}}</td>
+                        <td><a href="#{{file}}" class="modal-trigger">{{file}}</a></td>
                      </tr>
+                     <div id="{{file}}" class="modal">
+                        <div class="modal-content">
+                           <h4>File contents</h4>
+                           <p>{{ data['owned_files'][file] }}</p>
+                        </div>
+                        <div class="modal-footer">
+                           <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
+                        </div>
+                     </div>
                      {% endfor %}
                   </tbody>
                </table>
+               {% for file in data['owned_files'] %}
+               {% endfor %}
+
             </div>
             <div class="col s6">
                <h4>Available:</h4>
@@ -97,5 +109,8 @@
       </div>
 
       <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+      <script>
+       M.AutoInit();
+      </script>
    </body>
 </html>
