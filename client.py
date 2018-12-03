@@ -95,7 +95,7 @@ class Client(Flask):
             "file": file_name
         }
         self.send_payload(tracker_payload)
-        return "File request sent. <a href='/'>Go back</a>"
+        return redirect("/")
 
     def main_handler(self):
         """Client will receive comms from the tracker and files from other

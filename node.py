@@ -165,11 +165,15 @@ class Node(Flask):
 
         self.cprint([message["CID"], down_ip], "receive_from_bridge", colour)
 
+        payload = bytes.fromhex(message["payload"])
+        signatures = [self.sign(payload).hex()]
+
         new_message = {
             "CID": down_cid,
             # Encrypt the message when sending downstream, we
             # received it as encoded plaintext
-            "payload": aes_encrypt(bytes.fromhex(message["payload"]), sess_key).hex()
+            "payload": aes_encrypt(payload, sess_key).hex(),
+            "signatures": signatures
         }
         requests.post(get_url(down_ip), json=new_message)
         return "ok"
@@ -192,10 +196,12 @@ class Node(Flask):
             # for the tracker
             if "FSID" in decoded_payload:
                 return self.transmit_to_bridge(decoded_payload, colour)
-            # If we pass here, then we should just forward upstream
-            elif "type" in decoded_payload:
-                if decoded_payload["type"] == "teardown":
-                    self.teardown(message["CID"],colour)
+
+            # If the message is a teardown message
+            elif "type" in decoded_payload and decoded_payload["type"] == "teardown":
+                self.teardown(message["CID"], colour)
+
+                # If we pass here, then we should just forward upstream
 
         except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
             # A decoding exception occurred, just forward upstream
