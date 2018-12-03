@@ -41,7 +41,6 @@ def generate_rsa():
     decrypt messages (with the function rsa_decrypt).
     """
     while True:
-        # TODO Understand RSA
         p = random_prime(key_width // 2)
         q = random_prime(key_width // 2)
         lambda_n = lcm(p - 1, q - 1)
@@ -68,7 +67,6 @@ def rsa_encrypt(plain_text, public_key):
     assert type(public_key) == RSAPublicKey, "public_key must be of type RSAPublicKey"
 
     # Convert plain_text to number
-    # TODO use more secure padding
     plain_text = int.from_bytes(plain_text, byteorder="big", signed=False)
 
     assert plain_text < public_key.n, "plain_text must have a numerical value less than the modulus of the key"
@@ -108,7 +106,6 @@ def mod_inverse(a, b):
     """Calculates the inverse of a in a ring of modulus b. That is,
     returns an integer x such that ax = 1 mod b.
     """
-    # TODO Understand this code
     s = 0
     old_s = 1
     r = b
@@ -123,7 +120,6 @@ def mod_inverse(a, b):
 
 def lcm(a, b):
     """Returns the least common multiple of a and b."""
-    # TODO check that
     return abs(a * b) // gcd(a, b)
 
 def is_probably_prime(n, trials = 20):
