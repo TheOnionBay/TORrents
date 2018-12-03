@@ -54,6 +54,7 @@ class Node(Flask):
                 # ip, cid,direction,fsid
                 "receive_bridge": "Creating bridge entry for the future downstream file transfer of a file to {0} with CID {1}",
                 # ip, cid
+                "teardown" : "Received a teardown message. Removing entries for CID {0}"
             }
 
     def run(self):
@@ -188,7 +189,7 @@ class Node(Flask):
             # If we pass here, then we should just forward upstream
             elif "type" in decoded_payload:
                 if decoded_payload["type"] == "teardown":
-                    self.teardown(message["CID"])
+                    self.teardown(message["CID"],colour)
 
         except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
             # A decoding exception occurred, just forward upstream
@@ -290,7 +291,8 @@ class Node(Flask):
         self.log += "\n"
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
 
-    def teardown(self, down_cid):
+    def teardown(self, down_cid,colour):
+        self.cprint([down_cid],"teardown",colour)
         up_cid = self.down_relay[down_cid]["UpCID"]
         del self.down_relay[down_cid]
         del self.up_relay[up_cid]
