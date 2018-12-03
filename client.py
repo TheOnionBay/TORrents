@@ -2,7 +2,7 @@ import os
 import argparse
 import requests
 import json
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from random import sample
 
 from crypto.rsa import rsa_encrypt
@@ -10,7 +10,7 @@ from crypto.random_bytes import generate_bytes
 from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
-from common.network_info import tracker, node_pool, public_keys, cid_size
+from common.network_info import tracker, node_pool, public_keys, cid_size, get_url, domain_names
 from common.encoding import json_to_bytes, bytes_to_json
 
 
@@ -21,7 +21,7 @@ class Client(Flask):
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/connect", "connect", self.conn, methods=["GET"])
-        self.add_url_rule("/search", "search", self.search, methods=["POST"])
+        self.add_url_rule("/request", "request_file", self.request_file, methods=["POST"])
         self.owned_files = json.loads(filenames)
         self.network_files = set()
         self.tunnel_nodes = []
@@ -34,13 +34,15 @@ class Client(Flask):
         """Serves HTML page with input to request file.
 
         """
-        data = {"owned_files": list(self.owned_files.keys()),
-                "network_files": list(self.network_files),
-                "connected": self.connected,
-                "tunnel": self.tunnel_nodes}
+        data = {
+            "owned_files": list(self.owned_files.keys()),
+            "network_files": list(self.network_files),
+            "connected": self.connected,
+            "tunnel": [domain_names[node] for node in self.tunnel_nodes]
+        }
         return render_template("index.html", data=data)
 
-    def search(self):
+    def request_file(self):
         """Asks the tracker for the filename given in the UI form."""
         file_name = request.form["filename"] or ""
         print("Requesting file ", file_name)
@@ -49,6 +51,7 @@ class Client(Flask):
             "file": file_name
         }
         self.send_payload(tracker_payload)
+        return "File request sent. <a href='/'>Go back</a>"
 
     def main_handler(self):
         """Client will receive comms from the tracker and files from other
@@ -140,9 +143,9 @@ class Client(Flask):
             "payload": aes_encrypt(json_to_bytes(payloadX), self.sesskeys[0]).hex()
         }
 
-        requests.post("http://" + self.tunnel_nodes[0], json=message)
+        requests.post(get_url(self.tunnel_nodes[0]), json=message)
         self.connected = True
-        return "Connected to TheOnionBay. <a href='/'>Go back</a>"
+        return redirect("/")
 
     def send_payload(self, payload):
         """Encrypts three times a message and send it to the tunnel. The
@@ -153,7 +156,7 @@ class Client(Flask):
 
         # Encrypt in the reverse order, the closest node (first in the
         # list) decrypts first
-        for node, sesskey in reversed(zip(self.tunnel_nodes, self.sesskeys)):
+        for node, sesskey in reversed(list(zip(self.tunnel_nodes, self.sesskeys))):
             payload = aes_encrypt(payload, sesskey)
 
         message = {
@@ -161,7 +164,7 @@ class Client(Flask):
             "payload": payload.hex()
         }
 
-        requests.post("http://" + self.tunnel_nodes[0], json=message)
+        requests.post(get_url(self.tunnel_nodes[0]), json=message)
 
     def decrypt_payload(self, payload):
         """Peels 3 layers from the payload. Opposite routine to

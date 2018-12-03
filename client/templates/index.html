@@ -9,6 +9,11 @@
 
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
       <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <style>
+       .breadcrumb:before {
+         vertical-align: middle;
+       }
+      </style>
    </head>
 
    <body>
@@ -16,12 +21,22 @@
          <div class="row">
             <h1>TORrents client</h1>
             {% if data["connected"] %}
-            <p><i class="material-icons right">lock</i>Connected through:</p>
-            <ul>
-               {% for node in data["tunnel"] %}
-               <li>{{node}}</li>
-               {% endfor %}
-            </ul>
+            <p><i class="material-icons right">lock</i>Connection tunnel:</p>
+            <div class="card">
+               <div class="teal card-content white-text">
+                  <a href="#!" class="white-text breadcrumb">
+                     You
+                  </a>
+                  {% for node in data["tunnel"] %}
+                  <a target="_blank" href="http://{{node}}" class="white-text breadcrumb">
+                     {{node}}
+                  </a>
+                  {% endfor %}
+                  <a target="_blank" href="http://theonionbay.club" class="white-text breadcrumb">
+                     Tracker
+                  </a>
+               </div>
+            </div>
             {% else %}
             <a href="/connect">
                <button class="btn waves-effect waves-light">Onion connect
@@ -60,16 +75,19 @@
 
                   <tbody>
                      {% for file in data['network_files'] %}
+                     {% if file not in data['owned_files'] %}
                      <tr>
                         <td>{{file}}</td>
                         <td>
                            <form class="col s12 m6" action="/request" method="post">
                               <button class="btn waves-effect waves-light" type="submit" name="action">
                                  <i class="material-icons">file_download</i>
+                                 <input type="hidden" name="filename" value="{{file}}" />
                               </button>
                            </form>
                         </td>
                      </tr>
+                     {% endif %}
                      {% endfor %}
                   </tbody>
                </table>

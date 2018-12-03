@@ -220,7 +220,7 @@ tracker.
 Nodes can at any point receive control messages from the tracker. How do they
 differentiate between messages intended for them and messages that have to go
 back to the client ? The URL on which the message is sent is appended by
-`control/`, for example `http://192.168.0.14/control/`.
+`control/`, for example `http://node1.theonionbay.club:5000/control/`.
 
 * *Bridge creation*:
 
