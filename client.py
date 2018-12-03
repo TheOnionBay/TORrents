@@ -13,7 +13,8 @@ from crypto.aes_encrypt import encrypt as aes_encrypt
 from crypto.aes_decrypt import decrypt as aes_decrypt
 from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size, get_url, domain_names
-from common.encoding import json_to_bytes, bytes_to_json
+from common.encoding import json_to_bytes, bytes_to_json, payload_to_file, file_to_payload
+
 
 class SignatureNotMatching(Exception):
     def __init__(self, *args, **kwargs):
@@ -29,13 +30,20 @@ class Client(Flask):
         self.add_url_rule("/disconnect", "disconnect", self.teardown, methods=["GET"])
         self.add_url_rule("/request", "request_file", self.request_file, methods=["POST"])
         self.owned_files = json.loads(filenames)
+        self.default_files_path = "files"
         self.network_files = set()
         self.tunnel_nodes = []
         self.log = ""
         self.connected = False
+        self.clean_files()
 
     def run(self):
         super().run(host='0.0.0.0', use_reloader=False)
+
+    def clean_files(self):
+        for file in os.listdir(self.default_files_path):
+            if os.path.isfile(os.path.join(self.default_files_path, file)):
+                os.remove(os.path.join(self.default_files_path, file))
 
     def index(self):
         """Serves HTML page with input to request file.
@@ -100,7 +108,7 @@ class Client(Flask):
         response = {
             "type": "file",
             "file": filename,
-            "data": self.owned_files[filename],
+            "data": file_to_payload(self.owned_files[filename]),
             "FSID": message["FSID"]
         }
         self.send_payload(response)
@@ -108,7 +116,8 @@ class Client(Flask):
 
     def handle_receive_file(self, payload):
         self.log += "Received file " + payload["file"] + "\n"
-        self.owned_files[payload["file"]] = payload["data"]
+        self.owned_files[payload["file"]] = payload_to_file(
+            os.path.join(self.default_files_path, payload["file"]), payload["data"])
         return "ok"
 
     def handle_network_ls(self, files):
