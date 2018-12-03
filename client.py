@@ -27,6 +27,8 @@ class Client(Flask):
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/connect", "connect", self.conn, methods=["GET"])
+        # TODO : see how to make html work with file_content
+        #self.add_url_rule("/file_content", "file_content", self.file_content, methods=["GET"])
         self.add_url_rule("/disconnect", "disconnect", self.teardown, methods=["GET"])
         self.add_url_rule("/request", "request_file", self.request_file, methods=["POST"])
         self.owned_files = json.loads(filenames)
@@ -39,6 +41,22 @@ class Client(Flask):
 
     def run(self):
         super().run(host='0.0.0.0', use_reloader=False)
+
+    def file_content(self):
+        print("ping")
+        print(request.args)
+        return self.get_content(request.args["file"])
+
+    def get_content(self, file):
+        if file.endswith(".txt"):
+            text = ""
+            with open(file, 'r') as f:
+                for line in f:
+                    text += line
+            return text
+        else:
+            return '<img src="{}" />'.format(file)
+
 
     def clean_files(self):
         for file in os.listdir(self.default_files_path):
