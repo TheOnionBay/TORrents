@@ -185,8 +185,11 @@ class Node(Flask):
             # A decoding exception occurred, just forward upstream
             #pass
 
-        decoded_payload = bytes_to_json(payload)
-        return self.transmit_to_bridge(decoded_payload, colour)
+        print("MEssage: ", message)
+        print("Decrypted payload:", payload)
+        if "FSID" in payload:
+            decoded_payload = bytes_to_json(payload)
+            return self.transmit_to_bridge(decoded_payload, colour)
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
