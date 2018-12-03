@@ -186,6 +186,10 @@ class Node(Flask):
             if "FSID" in decoded_payload:
                 return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
+            elif "type" in decoded_payload:
+                if decoded_payload["type"] == "logout":
+                    self.teardown(message["CID"])
+
         except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
             # A decoding exception occurred, just forward upstream
             pass
@@ -279,6 +283,11 @@ class Node(Flask):
         self.log += self.statements[id].format(*args)
         self.log += "\n"
         print(Back.BLACK + colour + self.statements[id].format(*args), file=sys.stdout)
+
+    def teardown(self, down_cid):
+        up_cid = self.down_relay[down_cid]["UpCID"]
+        del self.down_relay[down_cid]
+        del self.up_relay[up_cid]
 
 
 parser = argparse.ArgumentParser(description='TORrent node')
