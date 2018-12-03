@@ -144,7 +144,7 @@ class Client(Flask):
 
     def handle_receive_file(self, payload):
         self.log += "Received file " + payload["file"] + "\n"
-        self.owned_files[payload["file"]] = os.path.join(self.default_files_path, payload["file"])
+        self.owned_files[payload["file"]] = payload["file"]
         payload_to_file(self.owned_files[payload["file"]], payload["data"])
         return "ok"
 
@@ -246,8 +246,8 @@ class Client(Flask):
 
     def teardown(self):
         payloadZ = aes_encrypt(json_to_bytes({"type": "teardown", "payload": {"type": "teardown"}}), self.sesskeys[2])
-        payloadY = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadZ}), self.sesskeys[1])
-        payloadX = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadY}), self.sesskeys[0])
+        payloadY = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadZ.hex()}), self.sesskeys[1])
+        payloadX = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadY.hex()}), self.sesskeys[0])
 
         self.send_payload(payloadX)
         self.connected = False
