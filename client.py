@@ -245,7 +245,7 @@ class Client(Flask):
         return payload
 
     def teardown(self):
-        payloadZ = aes_encrypt(json_to_bytes({"type": "teardown", "payload": {"type": "teardown"}}), self.sesskeys[2])
+        payloadZ = aes_encrypt(json_to_bytes({"type": "teardown", "payload": json_to_bytes({"type": "teardown"}).hex()}), self.sesskeys[2])
         payloadY = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadZ.hex()}), self.sesskeys[1])
         payloadX = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadY.hex()}), self.sesskeys[0])
 
