@@ -189,10 +189,11 @@ class Node(Flask):
             # for the tracker
             if "FSID" in decoded_payload:
                 return self.transmit_to_bridge(decoded_payload, colour)
-            # If we pass here, then we should just forward upstream
-            elif "type" in decoded_payload:
-                if decoded_payload["type"] == "teardown":
-                    self.teardown(message["CID"])
+            # If the message is a teardown message
+            elif "type" in decoded_payload and decoded_payload["type"] == "teardown":
+                self.teardown(message["CID"])
+
+                # If we pass here, then we should just forward upstream
 
         except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
             # A decoding exception occurred, just forward upstream
