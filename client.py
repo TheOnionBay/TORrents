@@ -22,6 +22,7 @@ class Client(Flask):
         self.add_url_rule("/", "index", self.index, methods=["GET"])
         self.add_url_rule("/", "main_handler", self.main_handler, methods=["POST"])
         self.add_url_rule("/connect", "connect", self.conn, methods=["GET"])
+        self.add_url_rule("/disconnect", "disconnect", self.teardown, methods=["GET"])
         self.add_url_rule("/request", "request_file", self.request_file, methods=["POST"])
         self.owned_files = json.loads(filenames)
         self.network_files = set()
