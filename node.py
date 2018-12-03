@@ -147,7 +147,7 @@ class Node(Flask):
 
     def receive_from_bridge(self, message, colour):
         # Disabled check for now, it may cause problems
-        if not self.bridgeCID_matches_existing_downCID(message["CID"])
+        if not self.bridgeCID_matches_existing_downCID(message["CID"]):
             return "Bridge CID does not matches with a down CID", 400 # 400 Bad Request
 
         down_cid = self.down_file_transfer[message["CID"]]
