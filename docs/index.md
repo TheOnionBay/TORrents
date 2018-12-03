@@ -104,9 +104,11 @@ with RSA, so that only X can decrypt it (once encrypted with RSA, the key is 128
 bytes long). The field `payload` is encrypted with the AES key, and contains the
 data for extending the tunnel.
 
-Instead of a key, we could very well send key material (a seed) so the node
-generates the key on its own with a key derivation function. It's basically the
-same, so we will send the key directly to simplify things.
+Instead of a key, we could very well send key material (a seed) so the
+node generates the key on its own with a key derivation function. In
+addition to this simplified Needham-Schroeder key exchange, the
+codebase contains the necessary Diffie-Hellman key agreement protocol
+if it was to be used.
 
 The decrypted payload should be interpreted as a JSON object, and has the
 following structure:
