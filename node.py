@@ -179,6 +179,7 @@ class Node(Flask):
 
             # Two possibilities here: the payload is for a bridge or
             # for the tracker
+            print(decoded_payload)
             if "FSID" in decoded_payload:
                 return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
