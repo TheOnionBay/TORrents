@@ -1,4 +1,4 @@
-# Installation
+# Installation/development setup
 
 Install `python3` and `pipenv` on your machine, then on the root of the project run:
 
@@ -10,7 +10,51 @@ This will install all python dependencies and activate the project's virtual env
 
 # Usage
 
-## Option 1 - LAN
+## (Main) Option 1 - Online
+
+You can find TheOnionBay online on the following links:
+
+### Tracker
+
+[http://theonionbay.club/](http://theonionbay.club/)
+
+It will display the list of files available in the network and its
+neighbours.
+
+### Nodes
+
+[http://node1.theonionbay.club/](http://node1.theonionbay.club/)
+
+[http://node2.theonionbay.club/](http://node2.theonionbay.club/)
+
+[http://node3.theonionbay.club/](http://node3.theonionbay.club/)
+
+[http://node4.theonionbay.club/](http://node4.theonionbay.club/)
+
+[http://node5.theonionbay.club/](http://node5.theonionbay.club/)
+
+[http://node6.theonionbay.club/](http://node6.theonionbay.club/)
+
+Each node displays traffic information in the network, to help
+visualise what is going on.
+
+### Clients
+
+[http://alice.theonionbay.club/](http://alice.theonionbay.club/)
+
+[http://bob.theonionbay.club/](http://bob.theonionbay.club/)
+
+These two already set up clients have a list of predefined files that
+they can share with each other. Adding a third client is a trivial
+task.
+
+All machines are synchronized with the [GitHub repository](https://github.com/TheOnionBay/TORrents).
+
+
+## Option 2 - LAN
+
+You can also run TheOnionBay on a range of local machines.
+
 Firstly, run the tracker:
 ```bash
     $ python3 tracker.py
@@ -34,37 +78,6 @@ And finally, one or more clients.
 where `<path-to-list-of-files>` is the path to a *.json file containing the files information. Examples can be found on the `client` folder.
 
 Keep in mind this option is LAN-oriented, so the processes must run in different machines.
-
-## Option 2 - Online
-
-You can also find TheOnionBay online on the following links:
-
-### Tracker
-
-[http://theonionbay.club/](http://theonionbay.club/)
-
-### Nodes
-
-[http://node1.theonionbay.club/](http://node1.theonionbay.club/)
-
-[http://node2.theonionbay.club/](http://node2.theonionbay.club/)
-
-[http://node3.theonionbay.club/](http://node3.theonionbay.club/)
-
-[http://node4.theonionbay.club/](http://node4.theonionbay.club/)
-
-[http://node5.theonionbay.club/](http://node5.theonionbay.club/)
-
-[http://node6.theonionbay.club/](http://node6.theonionbay.club/)
-
-### Clients
-
-[http://alice.theonionbay.club/](http://alice.theonionbay.club/)
-
-[http://bob.theonionbay.club/](http://bob.theonionbay.club/)
-
-All machines are synchronized with the [GitHub repository](https://github.com/TheOnionBay/TORrents).
-
 
 # Onion Routing
 
