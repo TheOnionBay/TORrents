@@ -4,6 +4,7 @@ import argparse
 import requests
 from flask import Flask, request, render_template
 from midict import MIDict
+import json
 
 from common.encoding import bytes_to_json, json_to_bytes
 from common.network_info import private_keys, cid_size, tracker, domain_names, get_url
@@ -142,8 +143,6 @@ class Node(Flask):
                 "data": payload["data"]
             }).hex()
         }
-        print("SENDING MESSAGE TO BRIDGE:")
-        print(new_message)
         requests.post(get_url(bridge_ip), json=new_message)
         return "ok"
 
@@ -185,16 +184,11 @@ class Node(Flask):
 
             # Two possibilities here: the payload is for a bridge or
             # for the tracker
-            print(decoded_payload)
             if "FSID" in decoded_payload:
                 return self.transmit_to_bridge(decoded_payload, colour)
             # If we pass here, then we should just forward upstream
-        except:
+        except (UnicodeDecodeError, json.decoder.JSONDecodeError) as e:
             # A decoding exception occurred, just forward upstream
-            print("Unexpected error:", sys.exc_info()[0])
-            print("MEssage: ", message)
-            print("Decrypted payload:", payload)
-            print(traceback.format_exc())
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
