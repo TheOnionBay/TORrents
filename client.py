@@ -66,7 +66,11 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        payload = self.decrypt_payload(msg["payload"], msg["signatures"])
+        try:
+            payload = self.decrypt_payload(msg["payload"], msg["signatures"])
+        except RuntimeError as e:
+            return str(e), 401 # 401 Not Authorized
+
         if payload["type"] == "request":
             return self.handle_request(payload)
         elif payload["type"] == "file":
@@ -180,11 +184,12 @@ class Client(Flask):
             decrypted_signature = rsa_decrypt(signature, public_keys[node])
             hashed_payload = hash_payload(payload)
             if decrypted_signature != hashed_payload:
-                return "Signatures do not match for node" + domain_names[node], 401 # Not Authorized
+                print("MISMATCH")
+                print("decrypted signature:", decrypted_signature)
+                print("hashed_payload:", hashed_payload)
+                raise RuntimeError("Signatures do not match for node" + domain_names[node])
 
-        print("before:", payload)
         payload = bytes_to_json(payload)
-        print("after:", payload)
         return payload
 
     def teardown(self):
