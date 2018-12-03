@@ -14,6 +14,9 @@ from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size, get_url, domain_names
 from common.encoding import json_to_bytes, bytes_to_json
 
+class SignatureNotMatching(Exception):
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
 
 class Client(Flask):
 
@@ -66,9 +69,10 @@ class Client(Flask):
 
         """
         msg = request.get_json()
+        print("GOT MSG: ", msg)
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
-        except RuntimeError as e:
+        except SignatureNotMatching as e:
             return str(e), 401 # 401 Not Authorized
 
         if payload["type"] == "request":
@@ -177,8 +181,10 @@ class Client(Flask):
         self.encrypt_payload.
 
         """
+        print("decrypting payload: " + payload)
         payload = bytes.fromhex(payload)
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
+            print("removing one layer on payload")
             payload = aes_decrypt(payload, sesskey)
             signature = bytes.fromhex(signature)
             decrypted_signature = rsa_decrypt(signature, public_keys[node])
@@ -187,7 +193,7 @@ class Client(Flask):
                 print("MISMATCH")
                 print("decrypted signature:", decrypted_signature)
                 print("hashed_payload:", hashed_payload)
-                raise RuntimeError("Signatures do not match for node" + domain_names[node])
+                raise SignatureNotMatching("Signatures do not match for node" + domain_names[node])
 
         payload = bytes_to_json(payload)
         return payload
