@@ -116,8 +116,8 @@ class Client(Flask):
 
     def handle_receive_file(self, payload):
         self.log += "Received file " + payload["file"] + "\n"
-        self.owned_files[payload["file"]] = payload_to_file(
-            os.path.join(self.default_files_path, payload["file"]), payload["data"])
+        self.owned_files[payload["file"]] = os.path.join(self.default_files_path, payload["file"])
+        payload_to_file(self.owned_files[payload["file"]], payload["data"])
         return "ok"
 
     def handle_network_ls(self, files):
