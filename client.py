@@ -4,6 +4,7 @@ import requests
 import json
 from flask import Flask, render_template, request, redirect
 from random import sample
+import sys
 
 from common.hash import hash_payload
 from crypto.rsa import rsa_encrypt, rsa_decrypt
@@ -14,6 +15,9 @@ from crypto import aes_common
 from common.network_info import tracker, node_pool, public_keys, cid_size, get_url, domain_names
 from common.encoding import json_to_bytes, bytes_to_json
 
+class SignatureNotMatching(Exception):
+    def __init__(self, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
 
 class Client(Flask):
 
@@ -27,6 +31,7 @@ class Client(Flask):
         self.owned_files = json.loads(filenames)
         self.network_files = set()
         self.tunnel_nodes = []
+        self.log = ""
         self.connected = False
 
     def run(self):
@@ -40,14 +45,15 @@ class Client(Flask):
             "owned_files": self.owned_files,
             "network_files": list(self.network_files),
             "connected": self.connected,
-            "tunnel": [domain_names[node] for node in self.tunnel_nodes]
+            "tunnel": [domain_names[node] for node in self.tunnel_nodes],
+            "log": self.log
         }
         return render_template("index.html", data=data)
 
     def request_file(self):
         """Asks the tracker for the filename given in the UI form."""
         file_name = request.form["filename"] or ""
-        print("Requesting file ", file_name)
+        self.log += "Requesting file " + file_name + "\n"
         tracker_payload = {
             "type": "request",
             "file": file_name
@@ -66,9 +72,10 @@ class Client(Flask):
 
         """
         msg = request.get_json()
+        self.log += "GOT MSG: " + str(msg) + "\n"
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
-        except RuntimeError as e:
+        except SignatureNotMatching as e:
             return str(e), 401 # 401 Not Authorized
 
         if payload["type"] == "request":
@@ -113,7 +120,6 @@ class Client(Flask):
 
         """
         self.tunnel_nodes = self.select_nodes(node_pool)
-        print("I CHOSE: ", self.tunnel_nodes)
         self.sesskeys = [generate_bytes(aes_common.key_size) for _ in self.tunnel_nodes]
         self.cid = generate_bytes(cid_size).hex()
 
@@ -177,17 +183,24 @@ class Client(Flask):
         self.encrypt_payload.
 
         """
+        self.log += "decrypting payload: " + str(payload) + "\n"
         payload = bytes.fromhex(payload)
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
+            self.log += "removing one layer on payload\n"
             payload = aes_decrypt(payload, sesskey)
+
+            hashed_payload = hash_payload(payload)
+
             signature = bytes.fromhex(signature)
             decrypted_signature = rsa_decrypt(signature, public_keys[node])
-            hashed_payload = hash_payload(payload)
+            # Take the last bytes of the decrypted signature, stripping padding
+            decrypted_signature = decrypted_signature[-len(hashed_payload):]
+
             if decrypted_signature != hashed_payload:
-                print("MISMATCH")
-                print("decrypted signature:", decrypted_signature)
-                print("hashed_payload:", hashed_payload)
-                raise RuntimeError("Signatures do not match for node" + domain_names[node])
+                self.log += "MISMATCH" + "\n"
+                self.log += "decrypted signature:" + decrypted_signature.hex() + "\n"
+                self.log += "hashed_payload:" + hashed_payload.hex() + "\n"
+                raise SignatureNotMatching("Signatures do not match for node" + domain_names[node])
 
         payload = bytes_to_json(payload)
         return payload
