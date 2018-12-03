@@ -1,7 +1,7 @@
 import os
 import requests
 from random import choice
-from flask import Flask, render_template, request, abort
+from flask import Flask, render_template, request
 from common.network_info import cid_size, get_url, domain_names
 from common.encoding import json_to_bytes, bytes_to_json
 from crypto.random_bytes import generate_bytes
@@ -137,6 +137,7 @@ class Tracker(Flask):
                     to_be_removed.append(file)
         for file in to_be_removed:
             del self.files[file]
+
 
 tracker = Tracker()
 tracker.run(host='0.0.0.0', use_reloader=False)
