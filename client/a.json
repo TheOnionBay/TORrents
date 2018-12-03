@@ -1,7 +1,7 @@
 {
-  "Finding nemo": "files/a/finding_nemo.txt",
-  "Toy Story": "files/a/toy_story.txt",
-  "Saving private cow": "files/a/saving_private_cow.txt",
-  "The Big Blue": "files/a/the_big_blue.txt",
-  "magritte_picture" : "files/a/this_is_not_a_pipe.jpg"
+  "Finding nemo": "client/files/a/finding_nemo.txt",
+  "Toy Story": "client/files/a/toy_story.txt",
+  "Saving private cow": "client/files/a/saving_private_cow.txt",
+  "The Big Blue": "client/files/a/the_big_blue.txt",
+  "magritte_picture" : "client/files/a/this_is_not_a_pipe.jpg"
 }

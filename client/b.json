@@ -1,7 +1,7 @@
 {
-  "Planet of the apes": "files/b/planet_of_the_apes.txt",
-  "Sonic the Hedgehog": "files/b/sonic_the_hedgehog.txt",
-  "+18": "files/b/+18.txt",
-  "dali_picture" : "files/b/dali_clock.jpg",
-  "drinking_picture" : "files/b/drinking_problem.jpg"
+  "Planet of the apes": "client/files/b/planet_of_the_apes.txt",
+  "Sonic the Hedgehog": "client/files/b/sonic_the_hedgehog.txt",
+  "+18": "client/files/b/+18.txt",
+  "dali_picture" : "client/files/b/dali_clock.jpg",
+  "drinking_picture" : "client/files/b/drinking_problem.jpg"
 }
