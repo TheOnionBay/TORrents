@@ -193,6 +193,8 @@ class Client(Flask):
         payloadX = aes_encrypt(json_to_bytes({"type": "teardown", "payload": payloadY}), self.sesskeys[0])
 
         self.send_payload(payloadX)
+        self.connected = False
+        return redirect("/")
 
 
 parser = argparse.ArgumentParser(description='TORrent client')
