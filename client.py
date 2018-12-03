@@ -72,7 +72,7 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        self.log += "GOT MSG: " + msg + "\n"
+        self.log += "GOT MSG: " + str(msg) + "\n"
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
         except SignatureNotMatching as e:
@@ -183,7 +183,7 @@ class Client(Flask):
         self.encrypt_payload.
 
         """
-        self.log += "decrypting payload: " + payload + "\n"
+        self.log += "decrypting payload: " + str(payload) + "\n"
         payload = bytes.fromhex(payload)
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
             self.log += "removing one layer on payload\n"
