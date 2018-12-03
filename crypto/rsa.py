@@ -11,7 +11,7 @@ cipher_text_length = key_width // 8
 
 # Maximum size of a message in bytes. This ensures that the number represented
 # by the message is less than the modulus of the key
-max_message_length = (key_width // 8)
+max_message_length = (key_width // 8) - 1
 
 # Public exponant, we fix it and search for p and q such that gcd(e, lambda_n) == 1
 # This value is a common one found online.
@@ -56,7 +56,7 @@ def generate_rsa():
             return RSAPublicKey(n, e), RSAPrivateKey(n, d)
 
 
-def rsa_encrypt(plain_text, public_key):
+def rsa_encrypt(plain_text, key):
     """Encrypts a message. The message has to be of type bytes and have a
     length less than max_message_length (to ensure mathematical correctness).
     Therefore, this is suited to encrypt small messages at once. If the message
@@ -65,47 +65,51 @@ def rsa_encrypt(plain_text, public_key):
     Parameters:
         plain_text: the message as a bytes object, with len(plain_text) < max_message_length
 
-        public_key: the public key, created by generate_rsa.
+        key: the public or private key, created by generate_rsa.
     Returns:
         An int object, the cipher text.
     """
     assert type(plain_text) == bytes, "plain_text must be of type bytes"
     assert len(plain_text) <= max_message_length, "plain_text must be at most max_message_length bytes long"
-    assert type(public_key) == RSAPublicKey, "public_key must be of type RSAPublicKey"
+    assert type(key) in (RSAPublicKey, RSAPrivateKey), "key must be a RSA key"
 
     # Convert plain_text to number
     # TODO use more secure padding
     plain_text = int.from_bytes(plain_text, byteorder="big", signed=False)
 
-    assert plain_text < public_key.n, "plain_text must have a numerical value less than the modulus of the key"
+    assert plain_text < key.n, "plain_text must have a numerical value less than the modulus of the key"
+
+    exponant = key.e if type(key) == RSAPublicKey else key.d
 
     # Encrypt the message
-    return exp_mod(plain_text, public_key.e, public_key.n).to_bytes(cipher_text_length, byteorder="big", signed=False)
+    return exp_mod(plain_text, exponant, key.n).to_bytes(cipher_text_length, byteorder="big", signed=False)
 
 
-def rsa_decrypt(cipher_text, private_key):
+def rsa_decrypt(cipher_text, key):
     """Decrypts a message. This is the reverse process of rsa_encrypt. The
     result is padded with zero bytes on the left, to make it max_message_length
     bytes long.
 
     Parameters
         cipher_text: the cipher text as int object
-        public_key: the public key, created by generate_rsa.
+        key: the public or private key, created by generate_rsa.
     Returns:
         The original message as when it was given to rsa_encrypt, as as bytes
         object, padded with zero bytes.
     """
     assert type(cipher_text) == bytes, "cipher_text must be of type bytes"
     assert len(cipher_text) == cipher_text_length, "cipher_text must be cipher_text_length bytes long"
-    assert type(private_key) == RSAPrivateKey, "private_key must be of type RSAPrivateKey"
+    assert type(key) in (RSAPublicKey, RSAPrivateKey), "key must be a RSA key"
 
     # Convert bytes to int
     cipher_text = int.from_bytes(cipher_text, byteorder="big", signed=False)
 
-    assert cipher_text < private_key.n, "the value of the cipher_text must be less than the modulus of the key"
+    assert cipher_text < key.n, "the value of the cipher_text must be less than the modulus of the key"
+
+    exponant = key.e if type(key) == RSAPublicKey else key.d
 
     # Decrypt the message
-    res = exp_mod(cipher_text, private_key.d, private_key.n)
+    res = exp_mod(cipher_text, exponant, key.n)
 
     # Convert the result back to bytes
     res = res.to_bytes(max_message_length, byteorder="big", signed=False)
