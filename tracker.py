@@ -60,15 +60,17 @@ class Tracker(Flask):
             # and put the cid of the client in it
             self.files.setdefault(file, []).append(cid)
 
-        # Send back the list of files we have in the network
-        response = {
-            "CID": cid,
-            "payload": json_to_bytes({
-                "type": "ls",
-                "files": list(self.files.keys())
-            }).hex()
-        }
-        requests.post(get_url(ip), json=response)
+        # Send a new list of files to all peers
+        for peer_cid, peer_ip in self.peers.items():
+            response = {
+                "CID": peer_cid,
+                "payload": json_to_bytes({
+                    "type": "ls",
+                    "files": list(self.files.keys())
+                }).hex()
+            }
+            requests.post(get_url(peer_ip), json=response)
+
         return "ok"
 
     def handle_file_request(self, request_client_cid, file):
