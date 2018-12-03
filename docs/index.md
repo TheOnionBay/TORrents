@@ -317,14 +317,14 @@ that C2 can provide. We will describe *how the bridge between Z2 and
 Z1 is established*. How the actual file is transmitted is described
 later. The procedure is as follow:
 
-1. The tracker assigns a *File Sharing ID* (FSID) to this file sharing
+1- The tracker assigns a *File Sharing ID* (FSID) to this file sharing
 operation. This is a number, taken from a counter incremented at each
 file request. Let's name this number `FSID1`.
 
-2. The tracker creates a new CircuitID that will be used in the link
+2- The tracker creates a new CircuitID that will be used in the link
 to bridge Z2 to Z1. Let's name this new CID `CID9`.
 
-3. The tracker sends a *control message* to Z2, instructing it to add
+3- The tracker sends a *control message* to Z2, instructing it to add
 a new entry to its *Upstream File Sharing Table* to properly redirect
 the file to Z1.  The message being sent is
 
@@ -357,7 +357,7 @@ The situation is now looking like that:
 
 ![](schematic_bridge.png?raw=true)
 
-4. The tracker sends *control message* to Z1, instructing it to add a
+4- The tracker sends *control message* to Z1, instructing it to add a
 new entry to its *Downstream File Sharing Table*. This will allow the
 file coming from Z2 to be properly redirected to Y1 and ultimately to
 C1. This control message is
@@ -387,7 +387,7 @@ redundant with the data in the Relay table.
 
 * *File sharing instruction*:
 
-1. Now that the bridge is established between Z2 and Z1, the tracker
+1- Now that the bridge is established between Z2 and Z1, the tracker
 sends a request message to C2, instructing it to share its file name
 *Dikkenek.avi*, by using the File Sharing ID `FSID1`. The payload of
 the message is
@@ -400,7 +400,7 @@ the message is
 }
 ```
 
-2. Upon receiving this request, the message has been encrypted three
+2- Upon receiving this request, the message has been encrypted three
 times by the three nodes (Z2, Y2 and X2). C2 decrypts the message,
 fetch the file and send the file sharing message to its tunnel through
 X2. This message is encrypted three times. The payload is as described
@@ -415,13 +415,13 @@ in the previous section:
 }
 ```
 
-3. When the message arrives to Z2, Z2 removes the last layer of
+3- When the message arrives to Z2, Z2 removes the last layer of
 encryption and sees that this is a file sharing message (the payload
 is now plaintext).  Therefore, Z2 does a lookup in its Upstream File
 Sharing Table by using the FSID contained in the message. This tells
 Z2 that the file should be transmitted to Z1 with CID `CID9`.
 
-4. Z2 forwards the file message to Z1 (through the bridge):
+4- Z2 forwards the file message to Z1 (through the bridge):
 
 ```json
 {
@@ -437,7 +437,7 @@ Z2 that the file should be transmitted to Z1 with CID `CID9`.
 At this points, the FSID is no longer needed, so it is not transmitted
 any more.
 
-5. Upon receiving the message from Z2, Z1 does a table lookup in the
+5- Upon receiving the message from Z2, Z1 does a table lookup in the
 Downstream File Sharing Table, and finds `CID9` in the column
 BridgeCID. The matching DownCID is `CID3`. Z1 can therefore look at
 the Relay Table to find the IP and SessKey associated to `CID3`, and
@@ -445,7 +445,7 @@ finds the IP of Y1, and `K_Z1` for the symmetric key. Z1 therefore has
 every needed information to encrypt and send the message back to C1
 through Y1.
 
-6. The message arrives back, encrypted three times to C1. C1 decrypts
+6- The message arrives back, encrypted three times to C1. C1 decrypts
 the three layers, and finds the file message:
 
 ```json
