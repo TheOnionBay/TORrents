@@ -72,7 +72,7 @@ class Client(Flask):
 
         """
         msg = request.get_json()
-        self.log += "GOT MSG: " + str(msg) + "\n"
+        self.log += "Receive message from " + msg["CID"] + "\n"
         try:
             payload = self.decrypt_payload(msg["payload"], msg["signatures"])
         except SignatureNotMatching as e:
@@ -89,7 +89,11 @@ class Client(Flask):
 
     def handle_request(self, message):
         filename = message["file"]
+
+        self.log += "Got file request with filename " + filename + "\n"
+
         if filename not in self.owned_files:
+            self.log += "File request can't be fulfilled\n"
             # We don't have the file, error 404 not found
             return ("File request can't be fulfilled, we don't have file " + filename, 404)
 
@@ -103,10 +107,12 @@ class Client(Flask):
         return "ok"
 
     def handle_receive_file(self, payload):
+        self.log += "Received file " + payload["file"] + "\n"
         self.owned_files[payload["file"]] = payload["data"]
         return "ok"
 
     def handle_network_ls(self, files):
+        self.log += "Received file listing from the server\n"
         self.network_files.update(files)
         return "ok"
 
@@ -183,10 +189,8 @@ class Client(Flask):
         self.encrypt_payload.
 
         """
-        self.log += "decrypting payload: " + str(payload) + "\n"
         payload = bytes.fromhex(payload)
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
-            self.log += "removing one layer on payload\n"
             payload = aes_decrypt(payload, sesskey)
 
             hashed_payload = hash_payload(payload)
@@ -197,9 +201,7 @@ class Client(Flask):
             decrypted_signature = decrypted_signature[-len(hashed_payload):]
 
             if decrypted_signature != hashed_payload:
-                self.log += "MISMATCH" + "\n"
-                self.log += "decrypted signature:" + decrypted_signature.hex() + "\n"
-                self.log += "hashed_payload:" + hashed_payload.hex() + "\n"
+                self.log += "Signatures do not match for node" + domain_names[node] + "\n"
                 raise SignatureNotMatching("Signatures do not match for node" + domain_names[node])
 
         payload = bytes_to_json(payload)
