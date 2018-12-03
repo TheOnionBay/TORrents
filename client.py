@@ -188,9 +188,14 @@ class Client(Flask):
         for node, sesskey, signature in zip(self.tunnel_nodes, self.sesskeys, reversed(signatures)):
             self.log += "removing one layer on payload\n"
             payload = aes_decrypt(payload, sesskey)
+
+            hashed_payload = hash_payload(payload)
+
             signature = bytes.fromhex(signature)
             decrypted_signature = rsa_decrypt(signature, public_keys[node])
-            hashed_payload = hash_payload(payload)
+            # Take the last bytes of the decrypted signature, stripping padding
+            decrypted_signature = decrypted_signature[-len(hashed_payload):]
+
             if decrypted_signature != hashed_payload:
                 self.log += "MISMATCH" + "\n"
                 self.log += "decrypted signature:" + decrypted_signature.hex() + "\n"
