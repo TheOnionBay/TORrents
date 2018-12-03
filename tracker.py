@@ -120,7 +120,7 @@ class Tracker(Flask):
                 "FSID": fsid
             }).hex()
         }
-        requests.post("http://" + request_client_ip, json=request_message)
+        requests.post("http://" + owning_client_ip, json=request_message)
         return "ok"
 
 

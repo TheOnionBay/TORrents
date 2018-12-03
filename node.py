@@ -107,13 +107,13 @@ class Node(Flask):
         message = request.get_json()
         from_ip = request.remote_addr + ":5000"
         colour = choice(self.colours)
-        if from_ip == tracker:
-            self.cprint([from_ip, "fromTracker"], colour)
-            if "type" in message and message["type"] == "make_bridge":
-                return self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
-            elif "type" in message and message["type"] == "receive_bridge":
-                return self.receive_bridge(message["bridge_CID"], message["CID"], colour)
-        return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
+        #if from_ip != tracker:
+            #return "control messages only allowed from the tracker", 405 # 405 Method Not Allowed
+        self.cprint([from_ip, "fromTracker"], colour)
+        if "type" in message and message["type"] == "make_bridge":
+            return self.make_bridge(message["FSID"], message["bridge_CID"], message["to"], colour)
+        elif "type" in message and message["type"] == "receive_bridge":
+            return self.receive_bridge(message["bridge_CID"], message["CID"], colour)
 
     def matching_cid_ip_from_down(self, cid, fromip):
         return fromip == self.down_relay[cid]["DownIP"]
