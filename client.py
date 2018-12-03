@@ -2,7 +2,7 @@ import os
 import argparse
 import requests
 import json
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from random import sample
 
 from crypto.rsa import rsa_encrypt
@@ -145,7 +145,7 @@ class Client(Flask):
 
         requests.post(get_url(self.tunnel_nodes[0]), json=message)
         self.connected = True
-        return "Connected to TheOnionBay. <a href='/'>Go back</a>"
+        return redirect("/")
 
     def send_payload(self, payload):
         """Encrypts three times a message and send it to the tunnel. The

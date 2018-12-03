@@ -75,6 +75,7 @@
 
                   <tbody>
                      {% for file in data['network_files'] %}
+                     {% if file not in data['owned_files'] %}
                      <tr>
                         <td>{{file}}</td>
                         <td>
@@ -86,6 +87,7 @@
                            </form>
                         </td>
                      </tr>
+                     {% endif %}
                      {% endfor %}
                   </tbody>
                </table>
