@@ -130,11 +130,7 @@ class Node(Flask):
             #return "FSID not found for file sharing", 404 # 404 Not Found
 
         bridge_ip, bridge_cid = self.up_file_transfer[fsid]
-        self.cprint([json_to_bytes({
-            "type": "file",
-            "file": payload["file"],
-            "data": payload["data"]
-        }).hex(), bridge_ip], "transmit_to_bridge", colour)
+        self.cprint([fsid, bridge_ip], "transmit_to_bridge", colour)
 
         new_message = {
             "CID": bridge_cid,
@@ -145,6 +141,8 @@ class Node(Flask):
                 "data": payload["data"]
             }).hex()
         }
+        print("SENDING MESSAGE TO BRIDGE:")
+        print(new_message)
         requests.post(get_url(bridge_ip), json=new_message)
         return "ok"
 
@@ -192,7 +190,10 @@ class Node(Flask):
             # If we pass here, then we should just forward upstream
         except:
             # A decoding exception occurred, just forward upstream
-            pass
+            print("Unexpected error:", sys.exc_info()[0])
+            print("MEssage: ", message)
+            print("Decrypted payload:", payload)
+            print(traceback.format_exc())
 
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
