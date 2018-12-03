@@ -10,8 +10,8 @@ Install **python3** and **pipenv** on your machine, then on the root of the proj
      pipenv shell
 ```
 This will install all python dependencies and activate the project's virtual environment.
-#Usage
-##Option 1 - LAN
+# Usage
+## Option 1 - LAN
 Firstly, run the tracker:
 ```bash
     python3 tracker.py
@@ -31,12 +31,12 @@ And finally, the client.
 ```
 Keep in mind this option is LAN-oriented. You will need different machines.
 
-##Option 2 - Online
+## Option 2 - Online
 You can also run TheOnionBay online on the following links:
-###Tracker
+### Tracker
 http://theonionbay.club/
 
-###Nodes
+### Nodes
 http://node1.theonionbay.club/
 http://node2.theonionbay.club/
 http://node3.theonionbay.club/
@@ -44,7 +44,7 @@ http://node4.theonionbay.club/
 http://node5.theonionbay.club/
 http://node6.theonionbay.club/
 
-###Clients
+### Clients
 http://alice.theonionbay.club/
 http://bob.theonionbay.club/
 
