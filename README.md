@@ -1,5 +1,7 @@
 # TORrents
 
+## [Explore the TORrents docs »](https://theonionbay.github.io/TORrents/)
+
 ## Setup
 
 Install pipenv and python3, then:
@@ -35,3 +37,10 @@ To start an instance of the tracker, run:
 
 where `<path-to-list-of-files>` can be `client/a.json` or
 `client/b.json` etc.
+
+### Node
+
+```
+(venv shell)$ python node.py <ip>
+```
+Where `<ip>` is the public ip of the machine.

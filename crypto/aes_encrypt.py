@@ -11,6 +11,8 @@ from .aes_common import *
 from .random_bytes import generate_bytes
 
 def encrypt(plain_text, key):
+    """Encrypts a message usin AES-128.
+    """
     assert type(plain_text) == bytes, "plain_text must be of type bytes"
     assert type(key) == bytes, "key must be of type bytes"
     assert len(key) == block_size, "key must be 128 bits"

@@ -35,11 +35,12 @@ class Client(Flask):
         self.connected = False
 
     def run(self):
+        """Runs the client application.
+        """
         super().run(host='0.0.0.0', use_reloader=False)
 
     def index(self):
         """Serves HTML page with input to request file.
-
         """
         data = {
             "owned_files": self.owned_files,
@@ -88,6 +89,8 @@ class Client(Flask):
             return ("Unexpected payload type", 400)
 
     def handle_request(self, message):
+        """Send the requested file if it exists, else sends an error.
+        """
         filename = message["file"]
 
         self.log += "Got file request with filename " + filename + "\n"

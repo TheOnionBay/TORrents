@@ -2,6 +2,9 @@ from .aes_common import *
 from collections import deque
 
 def decrypt(cipher_text, key):
+    """Decrypts a message using AES-128.
+    """
+
     assert type(cipher_text) == bytes, "cipher_text must be of type bytes"
     assert len(cipher_text) % block_size == 0, "cipher_text must consist of a whole number of blocks"
     assert type(key) == bytes, "key must be of type bytes"
