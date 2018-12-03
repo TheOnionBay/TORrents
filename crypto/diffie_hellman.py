@@ -5,7 +5,7 @@
     Tada.
 """
 from random import SystemRandom
-from rsa import random_prime, exp_mod
+from rsa import exp_mod
 
 random_gen = SystemRandom()
 
