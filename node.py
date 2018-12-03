@@ -129,7 +129,8 @@ class Node(Flask):
         #if fsid not in self.up_file_transfer:
             #return "FSID not found for file sharing", 404 # 404 Not Found
 
-        bridge_ip, bridge_cid = self.up_file_transfer[fsid]
+        bridge_ip = self.up_file_transfer[fsid]["IP"]
+        bridge_cid = self.up_file_transfer[fsid]["CID"]
         self.cprint([fsid, bridge_ip], "transmit_to_bridge", colour)
 
         new_message = {
@@ -264,7 +265,7 @@ class Node(Flask):
 
     def make_bridge(self, fsid, bridge_cid, bridge_ip, colour):
         self.cprint([bridge_ip, bridge_cid, "outgoing", fsid], "make_bridge",colour)
-        self.up_file_transfer[fsid] = (bridge_cid, bridge_ip)
+        self.up_file_transfer[fsid] = {"IP": bridge_ip, "CID": bridge_cid}
         return "ok"
 
     def receive_bridge(self, bridge_cid, origin_cid, colour):
