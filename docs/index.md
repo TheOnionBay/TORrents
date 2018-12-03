@@ -11,14 +11,14 @@ Install **python3** and **pipenv** on your machine, then on the root of the proj
 ```
 This is will install all python dependencies and activate the project's virtual environment.
 #Usage
-
+##Option 1 - LAN
 Firstly, run the tracker:
 ```bash
     python3 tracker.py
 ```
 
 Then, you will need to run at least three nodes.
-<ip\> : the public of ip of the current machine.
+<ip\> : the public ip of the current machine.
 ```bash
      python3 node.py <ip>
 ```
@@ -29,7 +29,24 @@ And finally, the client.
 ```bash
      python3 client.py <lof>
 ```
+##Option 2 - Online
+You can also try TheOnionBay online on the following links:
+###Tracker
+http://theonionbay.club/
 
+###Nodes
+http://node1.theonionbay.club/
+http://node2.theonionbay.club/
+http://node3.theonionbay.club/
+http://node4.theonionbay.club/
+http://node5.theonionbay.club/
+http://node6.theonionbay.club/
+
+###Clients
+http://alice.theonionbay.club/
+http://bob.theonionbay.club/
+
+The server is synchronized with the github repository.
 
 # Terms and definitions
 
@@ -43,7 +60,7 @@ DownCID, etc... In these names, Up and Down stand for *upstream* and
 *downstream*, therefore referring to the connection towards the tracker or
 towards the client, respectively.
 
-# Onion Rounting
+# Onion Routing
 
 ## Creating the tunnel
 
