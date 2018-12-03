@@ -73,19 +73,12 @@ class Node(Flask):
         colour = choice(self.colours)
         self.cprint([from_ip], "incoming", colour)
         self.cprint([message["CID"]], "cid", colour)
-        # If the message is a file to be transmitted to a bridge
-        if "FSID" in message:
-            if self.fsid_exists(message["FSID"]):
-                return self.transmit_to_bridge(message, colour)
-            else:
-                return "FSID not found for file sharing", 404
 
-        # If the message is received from a bridge, and to be
-        # transmitted down to the client
-        elif message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
+        # If the message is received from a bridge, and to be transmitted down to the client
+        if message["CID"] in self.down_file_transfer.indices["BridgeCID"]:
             return self.receive_from_bridge(message, colour)
 
-        # If the message is a normal message from down to upstream
+        # If the message is a normal message from down to upstream or to a bridge
         elif message["CID"] in self.down_relay.keys():
             return self.forward_upstream(message, colour)
 
@@ -93,10 +86,12 @@ class Node(Flask):
         elif message["CID"] in self.up_relay.keys():
             return self.forward_downstream(message, colour)
 
-        # We don't know the CID of the message, we assume it contains
-        # an AES key
-        else:
+        # We don't know the CID of the message, we assume it contains an AES key
+        elif "aes_key" in message:
             return self.create_tunnel(message, colour)
+
+        else:
+            return "Unknown kind of message", 400 # 400 Bad Request
 
     def control_handler(self):
         """Tracker control messages will arrive here. The table is update
@@ -127,19 +122,21 @@ class Node(Flask):
     def fsid_exists(self,fsid):
         return fsid in self.up_file_transfer.indices["FSID"]
 
-    def transmit_to_bridge(self, message, colour):
-        bridge_ip, bridge_cid = self.up_file_transfer["FSID": message["FSID"], ("BridgeIP", "BridgeCID")]
-        self.cprint([message["FSID"], bridge_ip], "transmit_to_bridge", colour)
+    def transmit_to_bridge(self, payload, colour):
+        if not self.fsid_exists(payload["FSID"]):
+            return "FSID not found for file sharing", 404 # 404 Not Found
 
-        payload = {
-            "type": "file",
-            "file": message["file"],
-            "data": message["data"]
-        }
+        bridge_ip, bridge_cid = self.up_file_transfer["FSID": payload["FSID"], ("BridgeIP", "BridgeCID")]
+        self.cprint([payload["FSID"], bridge_ip], "transmit_to_bridge", colour)
+
         new_message = {
             "CID": bridge_cid,
             # The payload is not encrypted, just encoded
-            "payload": json_to_bytes(payload).hex()
+            "payload": json_to_bytes({
+                "type": "file",
+                "file": payload["file"],
+                "data": payload["data"]
+            }).hex()
         }
         requests.post(get_url(bridge_ip), json=new_message)
         return "ok"
@@ -167,11 +164,25 @@ class Node(Flask):
         up_ip = self.down_relay[message["CID"]]["UpIP"]
         sess_key = self.down_relay[message["CID"]]["SessKey"]
 
+        # Decrypt the payload (peel one layer of the onion)
+        payload = aes_decrypt(bytes.fromhex(message["payload"]), sess_key)
+
+        # Try to decode the payload
+        try:
+            decoded_payload = bytes_to_json(payload)
+            # No decoding exception, the payload was a valid JSON once decoded
+            # Two possibilities here: the payload is for a bridge or for the tracker
+            if "FSID" in payload:
+                return self.transmit_to_bridge(decoded_payload, colour)
+            # If we pass here, then we should just forward upstream
+        except:
+            # A decoding exception occurred, just forward upstream
+            pass
+
         self.cprint([message["CID"], "upstream", up_ip], "forward", colour)
         new_message = {
             "CID": up_cid,
-            # Decrypt the payload (peel one layer of the onion)
-            "payload": aes_decrypt(bytes.fromhex(message["payload"]), sess_key).hex()
+            "payload": payload.hex()
         }
         requests.post(get_url(up_ip), json=new_message)
         return "ok"
@@ -193,9 +204,6 @@ class Node(Flask):
         return "ok"
 
     def create_tunnel(self, message, colour):
-        if "aes_key" not in message:
-            return "aes_key is needed in message when creating the tunnel", 400 # 400 Bad Request
-
         # Decrypt the AES key
         sess_key = rsa_decrypt(bytes.fromhex(message["aes_key"]), self.private_key)
         sess_key = sess_key[-aes_common.key_size:]  # Discard the right padding created by RSA
