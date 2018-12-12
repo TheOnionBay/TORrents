@@ -1,3 +1,9 @@
+# ⚠️   UPDATE 12/12/18
+
+Due to several cease and desist notices coming from the FBI, we've made the decision of taking TheOnionBay down.
+
+Thanks to all of our users (Alice and Bob) for these weeks of file sharing.
+
 # Installation/development setup
 
 Install `python3` and `pipenv` on your machine, then on the root of the project run:
